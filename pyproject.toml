@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "fastapi-with-jwt"
+name = "pyweb_hw13"
 version = "0.1.0"
 description = ""
 authors = ["Denys Tantsiura <ghost0002501@gmail.com>"]
