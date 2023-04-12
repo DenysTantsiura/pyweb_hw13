@@ -7,7 +7,7 @@ from src.database.db_connect import Base
 
 
 class Contact(Base):
-    __tablename__: str = "contacts"
+    __tablename__: str = 'contacts'
     id = Column(Integer, primary_key=True)
     name = Column(String(30), index=True)
     last_name = Column(String(40), index=True)
@@ -16,13 +16,13 @@ class Contact(Base):
     birthday = Column(Date, index=True, nullable=True)
     description = Column(String(3000))
     user_id = Column('user_id', ForeignKey('users.id', ondelete='CASCADE'), default=None)
-    user = relationship('User', backref="users")  # створює зв'язок між класами і вказує, що зв'язок є зв'язком m2m
+    user = relationship('User', backref='users')  # створює зв'язок між класами і вказує, що зв'язок є зв'язком m2m
     # backref створює зворотне посилання на клас User,
     # дозволяючи отримати доступ до зв'язаних об'єктів Contact з об'єкта User
 
 
 class User(Base):
-    __tablename__ = "users"
+    __tablename__ = 'users'
     id = Column(Integer, primary_key=True)
     username = Column(String(50))
     email = Column(String(30), nullable=False, unique=True)
