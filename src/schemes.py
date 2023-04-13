@@ -57,11 +57,15 @@ class UserDb(BaseModel):
 class UserResponse(BaseModel):
     """модель відповіді, яка містить у собі модель UserDb та поле відомостей detail з рядком."""
     user: UserDb
-    detail: str = "User successfully created"
+    detail: str = 'User successfully created'
 
 
 class TokenModel(BaseModel):
     """визначає відповідь при отриманні токенів доступу для користувача, що пройшов аутентифікацію."""
     access_token: str
     refresh_token: str
-    token_type: str = "bearer"
+    token_type: str = 'bearer'
+
+
+class RequestEmail(BaseModel):
+    email: EmailStr

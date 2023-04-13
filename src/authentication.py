@@ -23,20 +23,20 @@ def watcher(function):
 
 @watcher
 def save_key(key_file: str, key: str) -> None:
-    with open(key_file, "w") as fh:
+    with open(key_file, 'w') as fh:
         fh.write(key)
 
 
 @watcher
 def load_key(key_file: str) -> str:
-    with open(key_file, "r") as fh:
+    with open(key_file, 'r') as fh:
         return fh.readline()
 
 
 def get_password(key_file: str = key_file) -> str:
     """Return password from local file or user input in CLI."""
     if pathlib.Path(key_file).exists():
-        logging.info(f'Ok! Key-file found.')
+        logging.info(f'Ok! {key_file=} found.')
         key = load_key(key_file)
 
     else:

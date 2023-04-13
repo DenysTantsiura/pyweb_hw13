@@ -33,3 +33,10 @@ async def update_token(user: User, token: str | None, db: Session) -> None:
     Вона оновлює поле refresh_token користувача та фіксує зміни у базі даних."""
     user.refresh_token = token
     db.commit()
+
+
+async def confirmed_email(email: str, db: Session) -> None:
+    """встановити атрибут confirmed користувача в значення True у базі даних."""
+    user = await get_user_by_email(email, db)
+    user.confirmed = True
+    db.commit()

@@ -237,6 +237,6 @@ async def search_by_birthday_celebration_within_days(
     return paginate(
                     db.query(Contact)
                     .filter(Contact.user_id == user.id)
-                    .filter(func.to_char(Contact.birthday, f'{slide}MM-DD') >= today.strftime(f"0%m-%d"),
-                            func.to_char(Contact.birthday, '0MM-DD') <= days_limit.strftime(f"{slide}%m-%d"))
+                    .filter(func.to_char(Contact.birthday, f'{slide}MM-DD') >= today.strftime(f'0%m-%d'),
+                            func.to_char(Contact.birthday, '0MM-DD') <= days_limit.strftime(f'{slide}%m-%d'))
                     )
