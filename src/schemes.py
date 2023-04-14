@@ -37,7 +37,7 @@ class CatToNameModel(BaseModel):
 class UserModel(BaseModel):
     """корисні дані запиту для створення нового користувача."""
     username: str = Field(min_length=2, max_length=30)
-    email: str
+    email: EmailStr  # str
     password: str = Field(min_length=6, max_length=10)
 
 
@@ -69,3 +69,7 @@ class TokenModel(BaseModel):
 
 class RequestEmail(BaseModel):
     email: EmailStr
+
+
+class PasswordRecovery(BaseModel):
+    password: str = Field(min_length=6, max_length=10)

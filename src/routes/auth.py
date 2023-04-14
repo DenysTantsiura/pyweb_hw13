@@ -1,16 +1,26 @@
 from fastapi import APIRouter, HTTPException, Depends, status, Security, BackgroundTasks, Request
+from fastapi.responses import JSONResponse, HTMLResponse
 from fastapi.security import OAuth2PasswordRequestForm, HTTPAuthorizationCredentials, HTTPBearer
+from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 
 from src.database.db_connect import get_db
 from src.repository import users as repository_users
-from src.schemes import UserModel, UserResponse, TokenModel, RequestEmail
+from src.schemes import (
+                         PasswordRecovery,
+                         RequestEmail,
+                         TokenModel,
+                         UserModel, 
+                         UserResponse,                       
+                        )
 from src.services.auth import auth_service
-from src.services.email import send_email
+from src.services.email import send_email, send_reset_password
 
 
 router = APIRouter(prefix='/auth', tags=['auth'])
 security = HTTPBearer()
+
+templates = Jinja2Templates(directory='src/services/templates')
 
 
 @router.post('/signup', response_model=UserResponse, status_code=status.HTTP_201_CREATED)
@@ -93,7 +103,10 @@ async def refresh_token(
 
 
 @router.get('/confirmed_email/{token}')
-async def confirmed_email(token: str, db: Session = Depends(get_db)):
+async def confirmed_email(
+                          token: str, 
+                          db: Session = Depends(get_db)
+                          ) -> dict:
     """новий маршрут /confirm email/{token} для реалізації підтвердження електронної пошти. 
     Маршрут визначає операцію GET і приймає токен як параметр шляху.
     """
@@ -112,8 +125,12 @@ async def confirmed_email(token: str, db: Session = Depends(get_db)):
 
 
 @router.post('/request_email')
-async def request_email(body: RequestEmail, background_tasks: BackgroundTasks, request: Request,
-                        db: Session = Depends(get_db)):
+async def request_email(
+                        body: RequestEmail, 
+                        background_tasks: BackgroundTasks, 
+                        request: Request,
+                        db: Session = Depends(get_db)
+                        ) -> dict:
     """реалізує операцію POST для запиту повторної перевірки електронної пошти. Вона приймає тіло JSON з 
     адресою електронної пошти. Тому потрібно визначити модель RequestEmail у файлі src/shemas.py"""
     user = await repository_users.get_user_by_email(body.email, db)
@@ -129,3 +146,66 @@ async def request_email(body: RequestEmail, background_tasks: BackgroundTasks, r
     # так ми страхуємося від випадку, якщо зловмисник вирішив перевірити, 
     # чи існує в системі незавершена реєстрація для електронного листа
     return {'message': 'Check your email for confirmation.'}
+
+# ===================== NOW ==================== Need change +++++++++++++++++++++++++:
+
+@router.post('/reset-password')
+async def reset_password(
+                         body: RequestEmail, 
+                         background_tasks: BackgroundTasks, 
+                         request: Request,
+                         db: Session = Depends(get_db)
+                         ) -> dict:
+    """реалізує операцію POST для відновлення паролю. Вона генерує відповідний токен 
+    і надсилає його на email користувача."""
+    user = await repository_users.get_user_by_email(body.email, db)
+
+    if user and user.confirmed:
+        # !!! send to email letter-link to change password: ... !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        background_tasks.add_task(send_reset_password, user.email, user.username, request.base_url)
+        return {'message': 'Check your email for confirmation.'}
+    
+    if user:
+        return {'message': 'Your email address has not been verified yet.'}
+    
+    return {'message': 'Check if the email is entered correctly.'}
+
+
+@router.get('/reset-password/done', response_class=HTMLResponse, description='Request password reset Page')  # users/password_reset_done.html
+async def reset_password_done(request: Request) -> HTMLResponse:
+    """генерує сторінку повідомлення про успішність надсилання листа для скидання паролю."""
+    return templates.TemplateResponse('password_reset_done.html', {'request': request, 'title': 'Password-change email has been sent'})
+
+
+@router.post('/reset-password/confirm/{token}')  # , response_model=PasswordRecovery # users/password_reset_confirm.html
+async def reset_password_confirm(
+                                 body: PasswordRecovery,
+                                 background_tasks: BackgroundTasks, 
+                                 request: Request,
+                                 token: str,
+                                 db: Session = Depends(get_db)
+                                 ) -> dict:
+    """реалізує підтвердження скидання паролю."""
+    email = await auth_service.get_email_from_token(token)
+    exist_user = await repository_users.get_user_by_email(email, db)
+    if not exist_user:
+        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail='Can`t find user by email from token.')
+    
+    body.password = auth_service.get_password_hash(body.password)
+    # записати новий пароль до користувача в БД:
+
+    
+    updated_user = await repository_users.change_password_for_user(exist_user, body.password, db)
+    if updated_user is None:
+            raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail='Can`t find user by email from token.')
+
+    # Створюємо фонове завдання надсилання листа:
+    background_tasks.add_task(send_email, updated_user.email, updated_user.username, request.base_url)  # http://127.0.0.1:8000/
+
+    return {'user': updated_user, 'detail': 'User`s password successfully changed.'}
+
+
+@router.get('/reset-password/complete', response_class=HTMLResponse, description='Complete password reset Page')  # users/password_reset_complete.html
+async def reset_password_complete(request: Request) -> HTMLResponse:
+    """генерує сторінку повідомлення про успішність скидання паролю."""
+    return templates.TemplateResponse('password_reset_complete.html', {'request': request, 'title': 'Complete password reset'})

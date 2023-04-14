@@ -1,5 +1,8 @@
 # FastAPI + REST API example (Contacts) + Authorization
-from fastapi import FastAPI, Depends, HTTPException
+from fastapi import FastAPI, Depends, HTTPException, Request
+from fastapi.responses import JSONResponse, HTMLResponse
+from fastapi.staticfiles import StaticFiles
+from fastapi.templating import Jinja2Templates  # !!! poetry add jinja2
 from sqlalchemy.orm import Session
 from sqlalchemy import text
 import uvicorn
@@ -14,13 +17,18 @@ app.include_router(auth.router, prefix='/api')
 app.include_router(contacts.router, prefix='/api')
 
 
-@app.get('/')
-async def root() -> dict:
-    return {' Welcome! ': ' The personal virtual assistant is ready to go, I`m kidding ^_^ '}
+templates = Jinja2Templates(directory='templates')
+app.mount("/static", StaticFiles(directory="static"), name="static")
+
+
+@app.get('/', response_class=HTMLResponse, description='Main Page')
+async def root(request: Request) -> HTMLResponse:
+    # return {' Welcome! ': ' The personal virtual assistant is ready to go, I`m kidding ^_^ '}
+    return templates.TemplateResponse('index.html', {'request': request, 'title': 'The personal virtual assistant'})
 
 
 @app.get('/api/healthchecker')
-def healthchecker(db: Session = Depends(get_db)) -> dict: 
+def healthchecker(db: Session = Depends(get_db)) -> dict:  # JSONResponse ?
     """Check if the container (DB server) is up."""
     try:
         result = db.execute(text('SELECT 1')).fetchone()

@@ -28,6 +28,16 @@ async def create_user(body: UserModel, db: Session) -> User:
     return new_user
 
 
+async def change_password_for_user(user: User, password: str, db: Session) -> User:
+    """приймає користувача, новий пароль та - сеанс бази даних db. Оновлює пароль користувача у базі даних, 
+    а потім повертає оновлений об'єкт User."""
+    user.password = password
+    db.add(user)
+    db.commit()
+    db.refresh(user)
+    return user
+
+
 async def update_token(user: User, token: str | None, db: Session) -> None:
     """приймає об'єкт користувача user, токен оновлення token та сеанс бази даних db. 
     Вона оновлює поле refresh_token користувача та фіксує зміни у базі даних."""

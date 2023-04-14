@@ -1,0 +1,47 @@
+{% extends "quoteapp/base.html" %}
+
+{% block content %}
+    <h3>{{ tittle }}</h3>
+    Most popular:
+    {% for top_tag in tags %}
+    <a href="{% url 'quoteapp:search_by_tag' tag_fs=top_tag.0.tittle %}"> #{{ top_tag.0 }} </a>
+    {% endfor %}
+    <br>
+    {% for quote in quotes %}
+    <ul>
+        <li><label>{{ quote.quote }}</label></li> 
+        <li><a href="{% url 'quoteapp:about_author' author_id_fs=quote.author.author_id %}">by<b>
+                    {{ quote.author.fullname }}
+                </b></a></li>
+        <li>
+            <label>Tags:
+                {% for tag in quote.tags.all %}
+                <a href="{% url 'quoteapp:search_by_tag' tag_fs=tag %}" class="btn btn-info" role="button"> {{ tag }}</a>
+                {% endfor %}
+            </label>
+        </li>
+        
+        <a href="{% url 'quoteapp:about_quote' quote_id_fs=quote.quote_id %}">About Quote</a> <!--role="button"-->
+    </ul>
+    {% endfor %}
+    <span>
+        {% if quotes.has_previous %}
+        <a href="?page=1" class="btn btn-info" role="button">&lt;&lt;Start page</a>
+        <a href="?page={{ quotes.previous_page_number }}" class="btn btn-info" role="button">&nbsp;&nbsp;&lt;Previous page&nbsp;</a>
+        {% endif %}
+    
+        <span>
+            Page {{ quotes.number }} of {{ quotes.paginator.num_pages }}
+        </span>
+    
+        {% if quotes.has_next %}
+        <a href="?page={{ quotes.next_page_number }}" class="btn btn-info" role="button">&nbsp;Next page&gt;&nbsp;&nbsp;</a>
+        <a href="?page={{ quotes.paginator.num_pages }}" class="btn btn-info" role="button">Last page&gt;&gt;</a>
+        {% endif %}
+    </span>
+
+
+
+
+
+{% endblock %}

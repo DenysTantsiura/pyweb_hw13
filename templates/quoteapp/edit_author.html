@@ -1,0 +1,27 @@
+{% extends "quoteapp/base.html" %}
+
+{% block content %}
+<h1>Change Author</h1>
+<form action="{% url 'quoteapp:edit_author' author.id %}" method="post">
+    {% csrf_token %}
+    <!--<img src="{{media}}{{quote.path}}" width="350" height="350" alt="quote">-->
+    <div class="mb-3">
+        <label class="form-label">Fullname:</label>
+        <input type="text" class="form-control" value="{{author.fullname}}" name="fullname">
+    </div>
+    <div class="mb-3">
+        <label class="form-label">Birthday (YYYY-MM-DD):</label>
+        <input type="text" class="form-control" value="{{author.born_date}}" name="born_date">
+    </div>
+    <div class="mb-3">
+        <label class="form-label">Birth-location:</label>
+        <input type="text" class="form-control" value="{{author.born_location}}" name="born_location">
+    </div>
+    <div class="mb-3">
+        <label class="form-label">About Author:</label>
+        <input type="text" class="form-control" value="{{author.description}}" name="description">
+    </div>
+
+    <button type="submit" class="btn btn-primary">Submit</button>
+</form>
+{% endblock %}

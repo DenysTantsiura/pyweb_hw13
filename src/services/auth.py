@@ -150,6 +150,39 @@ class Auth:
             raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
                                 detail='Invalid token for email verification')
 
+    # define a function to generate a new access token
+    async def create_password_reset_token(self, data: dict, expires_delta: Optional[float] = None):
+        """створює веб-токен JWT з областю дії scope, що дорівнює значенню password_reset_token, 
+        який буде використовуватись для скидання паролю користувача.
+        приймає два параметри:
+        data - словник, що містить корисні дані для кодування у форматі JWT;
+        expires_delta - необов'язковий параметр, що визначає час життя токена в секундах. 
+            Якщо параметр не вказано, час життя за замовчуванням складає 45 хвилин."""
+        to_encode = data.copy()
+        if expires_delta:
+            expire = datetime.utcnow() + timedelta(seconds=expires_delta)
+
+        else:
+            expire = datetime.utcnow() + timedelta(minutes=45)
+        to_encode.update({'iat': datetime.utcnow(), 'exp': expire, 'scope': 'password_reset_token'})
+        encoded_password_reset_token = jwt.encode(to_encode, self.SECRET_KEY, algorithm=self.ALGORITHM)
+
+        return encoded_password_reset_token
+        
+    async def reset_password(self, token: str):  # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        """ генерує посилання для скидання паролю, яке буде використовуватися лише один раз. 
+        Після цього надсилає це посилання на адресу електронної пошти користувача."""
+        
+        try:
+            payload = jwt.decode(token, self.SECRET_KEY, algorithms=[self.ALGORITHM])
+            email = payload['sub']
+
+            return email
+        
+        except JWTError as e:
+            print(e)
+            raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                                detail='Invalid token for password reset')
 
 
 auth_service = Auth()  # будемо використовувати у всьому коді для виконання операцій аутентифікації та авторизації
