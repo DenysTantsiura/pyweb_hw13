@@ -1,18 +1,18 @@
 # FastAPI + REST API example (Contacts) + Authorization
 
 from fastapi import FastAPI, Depends, HTTPException, Request
+from fastapi_limiter.depends import FastAPILimiter
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse, HTMLResponse
+from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates  # !!! poetry add jinja2
-from fastapi_limiter import FastAPILimiter
 import redis.asyncio as redis
 from sqlalchemy.orm import Session
 from sqlalchemy import text
 import uvicorn
 
 from src.database.db_connect import get_db  # tl13_2.
-from src.routes import auth, contacts
+from src.routes import auth, contacts, users
 
 from src.conf.config import settings
 
@@ -33,6 +33,7 @@ app.add_middleware(
 
 app.include_router(auth.router, prefix='/api')
 app.include_router(contacts.router, prefix='/api')
+app.include_router(users.router, prefix='/api')
 
 
 templates = Jinja2Templates(directory='templates')
@@ -49,13 +50,16 @@ async def startup():
                                encoding="utf-8",
                                decode_responses=True
                                )
+    
+    # використовується для ініціалізації з’єднання з Redis. Це дає змогу використовувати Redis 
+    # для зберігання інформації про обмеження швидкості
     await FastAPILimiter.init(client)
 
 
 @app.get('/', response_class=HTMLResponse, description='Main Page')
 async def root(request: Request) -> HTMLResponse:
     # return {' Welcome! ': ' The personal virtual assistant is ready to go, I`m kidding ^_^ '}
-    return templates.TemplateResponse('index.html', {'request': request, 'title': 'The personal virtual assistant'})
+    return templates.TemplateResponse('index.html', {'request': request, 'title': 'The personal virtual assistant...'})
 
 
 @app.get('/api/healthchecker')

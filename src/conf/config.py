@@ -20,6 +20,9 @@ class Settings(BaseSettings):
     cors_credentials: str
     cors_methods: str
     cors_headers: str
+    cloudinary_name: str
+    cloudinary_api_key: str
+    cloudinary_api_secret: str
 
     class Config:
         """Задає розташування файлу середовища .env та його кодування utf-8. 

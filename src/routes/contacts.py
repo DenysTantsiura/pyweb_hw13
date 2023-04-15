@@ -18,6 +18,7 @@ from src.conf.config import settings
 router = APIRouter(prefix='/contacts')  # tags=['contacts']
 
 
+# https://pypi.org/project/python-redis-rate-limit/
 @router.get(
             '/', 
             description=f'No more than {settings.limit_crit} requests per minute',

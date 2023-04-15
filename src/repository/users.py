@@ -25,6 +25,7 @@ async def create_user(body: UserModel, db: Session) -> User:
     db.add(new_user)
     db.commit()
     db.refresh(new_user)
+
     return new_user
 
 
@@ -35,6 +36,7 @@ async def change_password_for_user(user: User, password: str, db: Session) -> Us
     db.add(user)
     db.commit()
     db.refresh(user)
+
     return user
 
 
@@ -50,3 +52,13 @@ async def confirmed_email(email: str, db: Session) -> None:
     user = await get_user_by_email(email, db)
     user.confirmed = True
     db.commit()
+
+
+async def update_avatar(email, url: str, db: Session) -> User:
+    """оновлює аватар користувача в базі даних."""
+    user = await get_user_by_email(email, db)
+    user.avatar = url
+    db.commit()
+    db.refresh(user)
+    
+    return user
