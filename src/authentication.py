@@ -40,7 +40,7 @@ def get_password(key_file: str = key_file) -> str:
         key = load_key(key_file)
 
     else:
-        key: str = input('Enter the KEY:\n')
+        key: str = input(f'Enter the KEY({key_file}):\n')
         save_key(key_file, key) if key else None
     
     return key

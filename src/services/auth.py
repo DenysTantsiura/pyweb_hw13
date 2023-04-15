@@ -2,17 +2,22 @@
 визначимо клас служби аутентифікації Auth. 
 Вона має кілька методів для підтримки операцій аутентифікації та авторизації.
 """
+from datetime import datetime, timedelta
+import pickle
 from typing import Optional
 
 from jose import JWTError, jwt
 from fastapi import HTTPException, status, Depends
 from fastapi.security import OAuth2PasswordBearer
 from passlib.context import CryptContext
-from datetime import datetime, timedelta
+import redis
+# from redis_lru import RedisLRU
 from sqlalchemy.orm import Session
 
 from src.database.db_connect import get_db
 from src.repository import users as repository_users
+
+from src.authentication import get_password
 
 
 class Auth:
@@ -25,6 +30,14 @@ class Auth:
     він, відповідно до стандарту, очікує на пару username і password, але, 
     замість значення username, будемо підставляти в полі email користувача."""
     oauth2_scheme = OAuth2PasswordBearer(tokenUrl='/api/auth/login')  # 
+    # https://dev.to/ramko9999/host-and-use-redis-for-free-51if
+    # Redis connect (to connect.py? but @cache, ... but external get_password()...):
+    client = redis.Redis(
+            host='redis-12148.c135.eu-central-1-1.ec2.cloud.redislabs.com',
+            port=12148,
+            password=get_password('key_redis.txt'))
+            
+    # cache = RedisLRU(client)
 
     def verify_password(self, plain_password, hashed_password) -> bool:
         """перевіряє, чи відповідає простий текстовий пароль хешованому паролю."""
@@ -88,6 +101,7 @@ class Auth:
         except JWTError:
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='Could not validate credentials')
 
+    # @cache
     async def get_current_user(self, token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
         """авторизує користувача, розшифровуючи токен доступу access_token та, перевіряючи існування користувача у БД.
         використовується для авторизації користувача на основі його токена доступу: access_token. 
@@ -115,9 +129,22 @@ class Auth:
             print(e)
             raise credentials_exception
 
-        user = await repository_users.get_user_by_email(email, db)
+        # redis cach: ... or @cache if LRU... https://developer.redis.com/develop/python/fastapi/
+        # user = await repository_users.get_user_by_email(email, db)
+        user = self.client.get(f'user:{email}')
         if user is None:
-            raise credentials_exception
+            user = await repository_users.get_user_by_email(email, db)
+            if user is None:
+                raise credentials_exception
+            
+            self.client.set(f"user:{email}", pickle.dumps(user))
+            self.client.expire(f"user:{email}", 900)
+
+        else:
+            user = pickle.loads(user)
+
+        # if user is None:
+        #     raise credentials_exception
         
         return user
     
