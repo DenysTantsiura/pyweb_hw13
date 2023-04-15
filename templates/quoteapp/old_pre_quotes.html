@@ -1,0 +1,21 @@
+{% extends "app_instagram/base.html" %}
+
+{% block content %}
+<h1>All Quotes:</h1>
+<div class="row">
+    {% for quote in quotes %}
+    <div class="col-md-4">
+        <div class="card" style="width: 18rem;">
+            <!--<img src="{{media}}{{pic.path}}" class="card-img-top" alt="pic">-->
+            <div class="card-body">
+                <p class="card-text">{{quote.quote}}</p>
+                <a href="{% url 'quoteapp:edit_quote' quote_id=quote.quote_id %}" class="btn btn-info">Edit</a>
+                <a href="{% url 'quoteapp:remove_quote' quote_id=quote.quote_id %}" class="btn btn-danger">Remove</a>
+            </div>
+        </div>
+    </div>
+
+    {% endfor %}
+
+</div>
+{% endblock %}

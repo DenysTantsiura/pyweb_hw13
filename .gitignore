@@ -127,3 +127,14 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+.idea/
+key.txt
+metakey.txt
+metamail.txt
+dsk.txt
+key_redis.txt
+*key.txt
+key*.txt
+*key*.txt
+
+.env

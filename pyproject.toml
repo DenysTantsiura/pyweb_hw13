@@ -1,0 +1,33 @@
+[tool.poetry]
+name = "pyweb_hw13"
+version = "0.1.0"
+description = ""
+authors = ["Denys Tantsiura <ghost0002501@gmail.com>"]
+readme = "README.md"
+packages = [{include = "fastapi_with_jwt"}]
+
+[tool.poetry.dependencies]
+python = "^3.10"
+fastapi = "^0.95.0"
+uvicorn = {extras = ["standard"], version = "^0.21.1"}
+sqlalchemy = "^2.0.7"
+psycopg2 = "^2.9.5"
+pydantic = {extras = ["email"], version = "^1.10.7"}
+alembic = "^1.10.2"
+fastapi-pagination = "^0.11.4"
+libgravatar = "^1.0.4"
+python-jose = {extras = ["cryptography"], version = "^3.3.0"}
+passlib = {extras = ["bcrypt"], version = "^1.7.4"}
+python-multipart = "^0.0.6"
+jose = "^1.0.0"
+fastapi-mail = "^1.2.7"
+redis-lru = "^0.1.2"
+python-dotenv = "^1.0.0"
+fastapi-limiter = "^0.1.5"
+cloudinary = "^1.32.0"
+redis = "^4.5.4"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

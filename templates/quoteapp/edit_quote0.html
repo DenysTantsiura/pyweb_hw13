@@ -1,0 +1,25 @@
+{% extends "quoteapp/base.html" %}
+
+{% block content %}
+<h1>Change a Quote</h1>
+<form action="{% url 'quoteapp:edit_quote' quote.id %}" method="post">
+    {% csrf_token %}
+    <!--<img src="{{media}}{{quote.path}}" width="350" height="350" alt="quote">-->
+    <div class="mb-3">
+        <label class="form-label">Quote:</label>
+        <input type="text" class="form-control" value="{{quote.quote}}" name="quote">
+    </div>
+    <div class="mb-3">
+        <label class="form-label">Author:</label>
+        <input type="text" class="form-control" value="{{quote.author}}" name="author">
+    </div>
+    <div class="mb-3">
+        <label class="form-label">Tags:
+            {{ form.tags }}
+        </label>
+        <span>{{ form.errors.tags }}</span>
+        <input type="checkbox" class="form-control" value="{{quote.tags.all}}" name="tags">
+    </div>
+    <button type="submit" class="btn btn-primary">Submit</button>
+</form>
+{% endblock %}

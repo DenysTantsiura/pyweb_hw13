@@ -1,0 +1,23 @@
+{% extends "quoteapp/base.html" %}
+
+{% block content %}
+<div>
+    <label>
+        <a href="{% url 'quoteapp:about_author' author_id_fs=quote.author.author_id %}">Author: {{ quote.author.fullname }}</a>
+    </label>
+    <label>Quote:
+        {{ quote.quote }}
+    </label>
+    <label>Tags:
+        {% for tag in quote.tags.all %}
+            <a href="{% url 'quoteapp:search_by_tag' tag_fs=tag %}" class="btn btn-info" role="button"> {{ tag }}</a>
+        {% endfor %}
+    </label>
+</div>
+{% if user.is_authenticated %}
+<div>
+    <a href="{% url 'quoteapp:remove_quote' quote_id_fs=quote.quote_id %}" class="btn btn-danger" role="button">Remove quote</a>
+    <a href="{% url 'quoteapp:edit_quote' quote_id_fs=quote.quote_id %}" class="btn btn-info" role="button">Edit quote</a>
+</div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,33 @@
+{% extends "quoteapp/base.html" %}
+
+{% block content %}
+
+<div>
+    <p>Upload a quote</p>
+</div>
+<form method="post" action="{% url 'quoteapp:edit_quote' quote.id %}">  <!--enctype="multipart/form-data"-->
+    {% csrf_token %}
+        <div>
+            <label class="form-label">Quote:
+                {{ form.quote }}
+            </label>
+            <span>{{ form.errors.quote }}</span>
+        </div>
+        <div>
+            <label class="form-label">Author:
+                {{ form.author }}
+            </label>
+            <span>{{ form.errors.author }}</span>
+        </div>
+        <div>
+            <label class="form-label"> Tags:
+                {{ form.tags }}
+            </label>
+            <span>{{ form.errors.tags }}</span>
+        </div>
+        <div class="grid">
+            <button type="submit" class="btn btn-primary">Submit</button>
+        </div>
+</form>
+
+{% endblock %}
