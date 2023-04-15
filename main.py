@@ -1,6 +1,7 @@
 # FastAPI + REST API example (Contacts) + Authorization
 
 from fastapi import FastAPI, Depends, HTTPException, Request
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates  # !!! poetry add jinja2
@@ -15,9 +16,26 @@ from src.routes import auth, contacts
 
 from src.conf.config import settings
 
+
 # load_dotenv()  # this should be before import on line 11-12 ? ! test or move toin-first uses (in module to 11 line)
 
 app = FastAPI()
+
+# Визначаємо список доменів, які можуть надсилати запити до нашого API
+origins = [ 
+    "http://localhost:3000",
+    "http://localhost:5000",
+    "http://localhost:8000",
+    ]
+
+# Додаємо CORSMiddleware у застосунок
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,  # визначає список джерел, яким дозволено доступ до застосунку
+    allow_credentials=True,  # True означає, що дозволені кросдоменні запити з урахуванням облікових даних
+    allow_methods=["*"],  # список дозволених методів HTTP, які можуть використовуватися для кросдоменних запитів
+    allow_headers=["*"],  # список дозволених заголовків HTTP, які можуть використовуватися в кросдоменних запитах
+)
 
 app.include_router(auth.router, prefix='/api')
 app.include_router(contacts.router, prefix='/api')
