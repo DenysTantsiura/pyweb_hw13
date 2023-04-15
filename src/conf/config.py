@@ -14,6 +14,8 @@ class Settings(BaseSettings):
     redis_host: str = 'localhost'
     redis_password: str
     redis_port: int = 6379
+    limit_crit: int
+    limit_warn: int
 
     class Config:
         """Задає розташування файлу середовища .env та його кодування utf-8. 

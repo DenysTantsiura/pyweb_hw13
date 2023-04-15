@@ -23,6 +23,7 @@ jose = "^1.0.0"
 fastapi-mail = "^1.2.7"
 redis-lru = "^0.1.2"
 python-dotenv = "^1.0.0"
+fastapi-limiter = "^0.1.5"
 
 
 [build-system]

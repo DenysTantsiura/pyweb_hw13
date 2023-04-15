@@ -2,6 +2,7 @@
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, status, Path
+from fastapi_limiter.depends import RateLimiter
 from fastapi_pagination import Page, add_pagination  # , paginate  # poetry add fastapi-pagination
 from sqlalchemy.orm import Session
 
@@ -11,11 +12,18 @@ from src.repository import contacts as repository_contacts
 from src.schemes import ContactModel, ContactResponse, CatToNameModel
 from src.services.auth import auth_service
 
+from src.conf.config import settings
+
 
 router = APIRouter(prefix='/contacts')  # tags=['contacts']
 
 
-@router.get('/', response_model=Page[ContactResponse], tags=['all_contacts'])
+@router.get(
+            '/', 
+            description=f'No more than {settings.limit_crit} requests per minute',
+            dependencies=[Depends(RateLimiter(times=settings.limit_crit, seconds=60))],
+            response_model=Page[ContactResponse], tags=['all_contacts']
+            )
 async def get_contacts(
                        db: Session = Depends(get_db), 
                        current_user: User = Depends(auth_service.get_current_user)
@@ -25,7 +33,12 @@ async def get_contacts(
     return contacts
 
 
-@router.get('/{contact_id}', response_model=ContactResponse, tags=['contact'])
+@router.get(
+            '/{contact_id}', 
+            description=f'No more than {settings.limit_warn} requests per minute',
+            dependencies=[Depends(RateLimiter(times=settings.limit_warn, seconds=60))],
+            response_model=ContactResponse, tags=['contact']
+            )
 async def get_contact(
                       contact_id: int = Path(ge=1),
                       db: Session = Depends(get_db),
@@ -38,7 +51,13 @@ async def get_contact(
     return contact
 
 
-@router.post('/', response_model=ContactResponse,  status_code=status.HTTP_201_CREATED, tags=['contact'])
+@router.post(
+             '/', 
+             response_model=ContactResponse,  
+             description=f'No more than {settings.limit_crit} requests per minute',
+             dependencies=[Depends(RateLimiter(times=settings.limit_crit, seconds=60))], 
+             status_code=status.HTTP_201_CREATED, tags=['contact']
+             )
 async def create_contact(
                          body: ContactModel,
                          db: Session = Depends(get_db),
@@ -48,7 +67,12 @@ async def create_contact(
     return await repository_contacts.create_contact(body, current_user, db)
 
 
-@router.put('/{contact_id}', response_model=ContactResponse, tags=['contact'])
+@router.put(
+            '/{contact_id}', 
+            description=f'No more than {settings.limit_crit} requests per minute',
+            dependencies=[Depends(RateLimiter(times=settings.limit_crit, seconds=60))],
+            response_model=ContactResponse, tags=['contact']
+            )
 async def update_contact(
                          body: ContactModel,
                          contact_id: int = Path(ge=1), 
@@ -62,7 +86,12 @@ async def update_contact(
     return contact
 
 
-@router.delete('/{contact_id}', response_model=ContactResponse, tags=['contact'])
+@router.delete(
+               '/{contact_id}', 
+               description=f'No more than {settings.limit_crit} requests per minute',
+               dependencies=[Depends(RateLimiter(times=settings.limit_crit, seconds=60))],
+               response_model=ContactResponse, tags=['contact']
+               )
 async def remove_contact(
                          contact_id: int = Path(ge=1),
                          db: Session = Depends(get_db),
@@ -75,7 +104,12 @@ async def remove_contact(
     return contact
 
 
-@router.patch('/{contact_id}/to_name', response_model=ContactResponse, tags=['contact'])
+@router.patch(
+              '/{contact_id}/to_name', 
+              description=f'No more than {settings.limit_crit} requests per minute',
+              dependencies=[Depends(RateLimiter(times=settings.limit_crit, seconds=60))],
+              response_model=ContactResponse, tags=['contact']
+              )
 async def change_name_contact(
                               body: CatToNameModel,
                               contact_id: int = Path(ge=1),
@@ -90,7 +124,12 @@ async def change_name_contact(
 
 
 # ---SEARCH---------------------------------------------------
-@router.get('/search_by_birthday_celebration_within_days/{days}', response_model=Page[ContactResponse], tags=['search'])
+@router.get(
+            '/search_by_birthday_celebration_within_days/{days}', 
+            description=f'No more than {settings.limit_warn} requests per minute',
+            dependencies=[Depends(RateLimiter(times=settings.limit_warn, seconds=60))],
+            response_model=Page[ContactResponse], tags=['search']
+            )
 async def search_by_birthday_celebration_within_days(
                                                      days: int,
                                                      db: Session = Depends(get_db),
@@ -104,7 +143,12 @@ async def search_by_birthday_celebration_within_days(
 
 
 # https://fastapi.tiangolo.com/tutorial/query-params/#__tabbed_2_1
-@router.get('/search_by_fields_and/', response_model=ContactResponse, tags=['search'])
+@router.get(
+            '/search_by_fields_and/', 
+            description=f'No more than {settings.limit_warn} requests per minute',
+            dependencies=[Depends(RateLimiter(times=settings.limit_warn, seconds=60))],
+            response_model=ContactResponse, tags=['search']
+            )
 async def search_by_fields_and(
                                #  body: ContactQuery,
                                name: str | None = None,
@@ -122,7 +166,12 @@ async def search_by_fields_and(
     return contact
 
 
-@router.get('/search_by_fields_or/{query_str}', response_model=Page[ContactResponse], tags=['search'])
+@router.get(
+            '/search_by_fields_or/{query_str}', 
+            description=f'No more than {settings.limit_warn} requests per minute',
+            dependencies=[Depends(RateLimiter(times=settings.limit_warn, seconds=60))],
+            response_model=Page[ContactResponse], tags=['search']
+            )
 async def search_by_fields_or(
                               query_str: str,
                               db: Session = Depends(get_db),
@@ -135,7 +184,12 @@ async def search_by_fields_or(
     return contact
 
 
-@router.get('/search_by_like_fields_or/{query_str}', response_model=Page[ContactResponse], tags=['search'])
+@router.get(
+            '/search_by_like_fields_or/{query_str}', 
+            description=f'No more than {settings.limit_warn} requests per minute',
+            dependencies=[Depends(RateLimiter(times=settings.limit_warn, seconds=60))],
+            response_model=Page[ContactResponse], tags=['search']
+            )
 async def search_by_like_fields_or(
                                    query_str: str,
                                    db: Session = Depends(get_db),
@@ -148,7 +202,12 @@ async def search_by_like_fields_or(
     return contact
 
 
-@router.get('/search_by_like_fields_and/', response_model=Page[ContactResponse], tags=['search'])
+@router.get(
+            '/search_by_like_fields_and/', 
+            description=f'No more than {settings.limit_warn} requests per minute',
+            dependencies=[Depends(RateLimiter(times=settings.limit_warn, seconds=60))],
+            response_model=Page[ContactResponse], tags=['search']
+            )
 async def search_by_like_fields_and(
                                     name: str | None = None,
                                     last_name: str | None = None,

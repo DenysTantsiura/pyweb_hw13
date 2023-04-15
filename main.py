@@ -4,6 +4,8 @@ from fastapi import FastAPI, Depends, HTTPException, Request
 from fastapi.responses import JSONResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates  # !!! poetry add jinja2
+from fastapi_limiter import FastAPILimiter
+import redis.asyncio as redis
 from sqlalchemy.orm import Session
 from sqlalchemy import text
 import uvicorn
@@ -11,6 +13,7 @@ import uvicorn
 from src.database.db_connect import get_db  # tl13_2.
 from src.routes import auth, contacts
 
+from src.conf.config import settings
 
 # load_dotenv()  # this should be before import on line 11-12 ? ! test or move toin-first uses (in module to 11 line)
 
@@ -22,6 +25,19 @@ app.include_router(contacts.router, prefix='/api')
 
 templates = Jinja2Templates(directory='templates')
 app.mount("/static", StaticFiles(directory="static"), name="static")
+
+
+@app.on_event("startup")
+async def startup():
+    client = await redis.Redis(
+                               host=settings.redis_host,
+                               port=settings.redis_port,
+                               password=settings.redis_password,
+                               db=0, 
+                               encoding="utf-8",
+                               decode_responses=True
+                               )
+    await FastAPILimiter.init(client)
 
 
 @app.get('/', response_class=HTMLResponse, description='Main Page')
