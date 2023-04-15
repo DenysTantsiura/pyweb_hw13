@@ -1,21 +1,20 @@
-import os
 from pathlib import Path
 
 from fastapi_mail import FastMail, MessageSchema, ConnectionConfig, MessageType
 from fastapi_mail.errors import ConnectionErrors
 from pydantic import EmailStr
 
-from src.authentication import get_password
+from src.conf.config import settings
 from src.services.auth import auth_service
 
 
 conf = ConnectionConfig(
-    MAIL_USERNAME=os.environ.get('POST_USERNAME') or get_password('metamail.txt'),
-    MAIL_PASSWORD=os.environ.get('POST_KEY') or get_password('metakey.txt'),
-    MAIL_FROM=EmailStr(os.environ.get('POST_USERNAME') or get_password('metamail.txt')),
-    MAIL_PORT=465,
-    MAIL_SERVER='smtp.meta.ua',
-    MAIL_FROM_NAME='Den`s application',  # 'Desired Name',
+    MAIL_USERNAME=settings.mail_username,
+    MAIL_PASSWORD=settings.mail_password,
+    MAIL_FROM=EmailStr(settings.mail_from),
+    MAIL_PORT=settings.mail_port,
+    MAIL_SERVER=settings.mail_server,
+    MAIL_FROM_NAME=settings.mail_from_name,
     MAIL_STARTTLS=False,  # чи використовувати безпеку транспортного рівня TLS у разі підключення до SMTP-сервера
     MAIL_SSL_TLS=True,  # варто використовувати SSL у разі підключення до SMTP-сервера
     USE_CREDENTIALS=True,

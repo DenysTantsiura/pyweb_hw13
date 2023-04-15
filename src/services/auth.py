@@ -3,7 +3,6 @@
 Вона має кілька методів для підтримки операцій аутентифікації та авторизації.
 """
 from datetime import datetime, timedelta
-import os
 import pickle
 from typing import Optional
 
@@ -17,13 +16,13 @@ from sqlalchemy.orm import Session
 
 from src.database.db_connect import get_db
 from src.repository import users as repository_users
-from src.authentication import get_password
+from src.conf.config import settings
 
 
 class Auth:
     pwd_context = CryptContext(schemes=['bcrypt'], deprecated='auto')
-    SECRET_KEY = 'secret_key'
-    ALGORITHM = 'HS256'
+    SECRET_KEY = settings.secret_key
+    ALGORITHM = settings.algorithm
     """забезпечує авторизацію по bearer токену. Він потрібний для валідації JWT токена, 
     який буде використовуватися як аутентифікаційні дані користувача.
     вказуємо йому, де в нашому застосунку буде маршрут для аутентифікації tokenUrl='/api/auth/login'. І
@@ -33,9 +32,10 @@ class Auth:
     # https://dev.to/ramko9999/host-and-use-redis-for-free-51if
     # Redis connect (to connect.py? but @cache, ... but external get_password()...):
     client = redis.Redis(
-            host='redis-12148.c135.eu-central-1-1.ec2.cloud.redislabs.com',
-            port=12148,
-            password=os.environ.get('REDIS_KEY') or get_password('key_redis.txt'))
+                         host=settings.redis_host,
+                         port=settings.redis_port,
+                         password=settings.redis_password
+                         )
             
     # cache = RedisLRU(client)
 

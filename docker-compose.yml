@@ -8,7 +8,8 @@ services:
     # і не має певні змінні середовища або томи:
     image: redis:alpine
     ports:
-      - "6379:6379" # HOST:CONTAINER  # https://docs.docker.com/compose/compose-file/compose-file-v3/#ports
+      # HOST:CONTAINER  # https://docs.docker.com/compose/compose-file/compose-file-v3/#ports
+      - "6379:6379"
   postgres:
     # Служба postgres використовує образ Docker postgres:12,
     # зіставляє внутрішній порт 5432 з портом хосту 5432 та має
@@ -18,9 +19,13 @@ services:
     # каталог ./postgres-data на каталог контейнера /var/lib/postgresql/data
     image: postgres:12
     environment:
-      POSTGRES_DB: rest_app
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: 54326379
+      # Під час запуску Docker побачить плейсхолдер і автоматично підставить значення з файлу .env
+      # rest_app
+      POSTGRES_DB: ${POSTGRES_DB}
+      # postgres
+      POSTGRES_USER: ${POSTGRES_USER}
+      # 54326379
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     ports:
       - "5432:5432"
     volumes:
