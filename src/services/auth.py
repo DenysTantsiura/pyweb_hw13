@@ -11,7 +11,6 @@ from fastapi import HTTPException, status, Depends
 from fastapi.security import OAuth2PasswordBearer
 from passlib.context import CryptContext
 import redis
-# from redis_lru import RedisLRU
 from sqlalchemy.orm import Session
 
 from src.database.db_connect import get_db
@@ -36,8 +35,6 @@ class Auth:
                          port=settings.redis_port,
                          password=settings.redis_password
                          )
-            
-    # cache = RedisLRU(client)
 
     def verify_password(self, plain_password, hashed_password) -> bool:
         """перевіряє, чи відповідає простий текстовий пароль хешованому паролю."""
@@ -129,8 +126,7 @@ class Auth:
             print(e)
             raise credentials_exception
 
-        # redis cach: ... or @cache if LRU... https://developer.redis.com/develop/python/fastapi/
-        # user = await repository_users.get_user_by_email(email, db)
+        # https://developer.redis.com/develop/python/fastapi/
         user = self.client.get(f'user:{email}')
         if user is None:
             user = await repository_users.get_user_by_email(email, db)
@@ -142,9 +138,6 @@ class Auth:
 
         else:
             user = pickle.loads(user)
-
-        # if user is None:
-        #     raise credentials_exception
         
         return user
     
@@ -196,10 +189,9 @@ class Auth:
 
         return encoded_password_reset_token
         
-    async def reset_password(self, token: str):  # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    async def reset_password(self, token: str):
         """ генерує посилання для скидання паролю, яке буде використовуватися лише один раз. 
         Після цього надсилає це посилання на адресу електронної пошти користувача."""
-        
         try:
             payload = jwt.decode(token, self.SECRET_KEY, algorithms=[self.ALGORITHM])
             email = payload['sub']
@@ -212,4 +204,4 @@ class Auth:
                                 detail='Invalid token for password reset')
 
 
-auth_service = Auth()  # будемо використовувати у всьому коді для виконання операцій аутентифікації та авторизації
+auth_service = Auth()

@@ -7,7 +7,7 @@ class Settings(BaseSettings):
     algorithm: str
     mail_username: str
     mail_password: str
-    mail_from: str  # = self.mail_username
+    mail_from: str  # = self.mail_username ?
     mail_port: int
     mail_server: str
     mail_from_name: str

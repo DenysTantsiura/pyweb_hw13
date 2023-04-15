@@ -1,4 +1,3 @@
-# функції для взаємодії з базою даних.
 from datetime import date, timedelta
 from typing import Optional
 
@@ -119,7 +118,6 @@ async def change_name_contact(
 
 # -=- AND--------------------------------------------------------------
 async def search_by_fields_and(
-                            #    body: ContactQuery,
                                name: str | None,
                                last_name: str | None,
                                email: str | None,
@@ -128,16 +126,6 @@ async def search_by_fields_and(
                                db: Session
                                ) -> Optional[Contact]:
     """To search for a record by a specific value for field(-s)."""
-    # body_data = jsonable_encoder(body)
-    # if not any(body_data.values()):
-
-    #     return None
-    
-    # result = db.query(Contact).filter(Contact.user_id == user.id)
-    # for field in body_data:
-    #     if body[field]:
-    #         result = result.filter_by(field=body[field])
-
     if not name and not last_name and not email and not phone:
         return None
 
@@ -151,7 +139,7 @@ async def search_by_fields_and(
     if phone:
         result = result.filter_by(phone=phone)
 
-    return result.first()  # db.query(Contact).filter(Contact.user_id == user.id).filter_by(name=name).first()
+    return result.first()
 
 
 # -=- OR ----------------------------------------------------------------

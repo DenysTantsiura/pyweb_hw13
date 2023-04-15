@@ -15,8 +15,8 @@ conf = ConnectionConfig(
     MAIL_PORT=settings.mail_port,
     MAIL_SERVER=settings.mail_server,
     MAIL_FROM_NAME=settings.mail_from_name,
-    MAIL_STARTTLS=False,  # чи використовувати безпеку транспортного рівня TLS у разі підключення до SMTP-сервера
-    MAIL_SSL_TLS=True,  # варто використовувати SSL у разі підключення до SMTP-сервера
+    MAIL_STARTTLS=False,
+    MAIL_SSL_TLS=True,
     USE_CREDENTIALS=True,
     VALIDATE_CERTS=True,
     TEMPLATE_FOLDER=Path(__file__).parent / 'templates',
@@ -34,7 +34,7 @@ async def send_email(email: EmailStr, username: str, host: str):
     що передає повідомлення та ім’я шаблону email_template.html. 
     Сам шаблон знаходиться в папці templates)
     """
-    subject='Confirm your email '
+    subject = 'Confirm your email '
     try:
         token_verification = auth_service.create_email_token({'sub': email})
         message = MessageSchema(
@@ -68,7 +68,7 @@ async def send_reset_password(email: EmailStr, username: str, host: str):
     що передає повідомлення та ім’я шаблону password_reset.html. 
     Сам шаблон знаходиться в папці templates)
     """
-    subject='Reset password '
+    subject = 'Reset password '
     try:
         token_verification = await auth_service.create_password_reset_token({'sub': email})
         message = MessageSchema(

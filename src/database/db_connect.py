@@ -1,9 +1,6 @@
-# підключення до бази даних (sqlite/PostgreSQL)
 import logging
-import pathlib
 from typing import Optional
 
-from dotenv import load_dotenv
 from sqlalchemy import (
     create_engine, 
     Engine,

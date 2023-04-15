@@ -1,9 +1,8 @@
-# Роутер(маршрут) для модуля contacts - містить точки доступу для операцій CRUD
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, status, Path
 from fastapi_limiter.depends import RateLimiter
-from fastapi_pagination import Page, add_pagination  # , paginate  # poetry add fastapi-pagination
+from fastapi_pagination import Page, add_pagination
 from sqlalchemy.orm import Session
 
 from src.database.db_connect import get_db

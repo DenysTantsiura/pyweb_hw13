@@ -1,5 +1,5 @@
 from fastapi import APIRouter, HTTPException, Depends, status, Security, BackgroundTasks, Request
-from fastapi.responses import JSONResponse, HTMLResponse
+from fastapi.responses import HTMLResponse
 from fastapi.security import OAuth2PasswordRequestForm, HTTPAuthorizationCredentials, HTTPBearer
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
@@ -53,7 +53,7 @@ async def signup(
 
 @router.post('/login', response_model=TokenModel)
 async def login(
-                body: OAuth2PasswordRequestForm = Depends(),  # автоматом йде у Depends
+                body: OAuth2PasswordRequestForm = Depends(),  # OAuth2PasswordRequestForm автоматом йде у Depends
                 db: Session = Depends(get_db)
                 ) -> dict:
     """обробляє операцію POST. Вона витягує користувача з бази даних з його email, якщо такого користувача немає, 
@@ -66,11 +66,12 @@ async def login(
     if user is None:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='Invalid email')
     
-    if not user.confirmed:  # чи є email користувача верифікованим?
+    if not user.confirmed:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='Email not confirmed')
     
     if not auth_service.verify_password(body.password, user.password):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='Invalid password')
+    
     # Generate JWT
     access_token = await auth_service.create_access_token(data={'sub': user.email})
     refresh_token = await auth_service.create_refresh_token(data={'sub': user.email})
@@ -114,8 +115,7 @@ async def confirmed_email(
     user = await repository_users.get_user_by_email(email, db)
     if user is None:  # Якщо користувача з отриманим email немає у DB, що вже підозріло, генеруємо 400 Bad request
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='Verification error')
-    
-    # перевіряємо ситуацію, яким чином електронну пошту користувача вже підтверджено.   
+     
     if user.confirmed:
         return {'message': 'Your email is already confirmed'}
     
@@ -147,7 +147,6 @@ async def request_email(
     # чи існує в системі незавершена реєстрація для електронного листа
     return {'message': 'Check your email for confirmation.'}
 
-# ===================== NOW ==================== Need change +++++++++++++++++++++++++:
 
 @router.post('/reset-password')
 async def reset_password(
@@ -161,8 +160,8 @@ async def reset_password(
     user = await repository_users.get_user_by_email(body.email, db)
 
     if user and user.confirmed:
-        # !!! send to email letter-link to change password: ... !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         background_tasks.add_task(send_reset_password, user.email, user.username, request.base_url)
+
         return {'message': 'Check your email for confirmation.'}
     
     if user:
@@ -171,13 +170,15 @@ async def reset_password(
     return {'message': 'Check if the email is entered correctly.'}
 
 
-@router.get('/reset-password/done', response_class=HTMLResponse, description='Request password reset Page')  # users/password_reset_done.html
-async def reset_password_done(request: Request) -> HTMLResponse:
+# users/password_reset_done.html
+@router.get('/reset-password/done', response_class=HTMLResponse, description='Request password reset Page')  
+async def reset_password_done(request: Request) -> HTMLResponse:  # _TemplateResponse ?
     """генерує сторінку повідомлення про успішність надсилання листа для скидання паролю."""
-    return templates.TemplateResponse('password_reset_done.html', {'request': request, 'title': 'Password-change email has been sent'})
+    return templates.TemplateResponse('password_reset_done.html', {'request': request, 
+                                                                   'title': 'Password-change email has been sent'})
 
 
-@router.post('/reset-password/confirm/{token}')  # , response_model=PasswordRecovery # users/password_reset_confirm.html
+@router.post('/reset-password/confirm/{token}')  # users/password_reset_confirm.html
 async def reset_password_confirm(
                                  body: PasswordRecovery,
                                  background_tasks: BackgroundTasks, 
@@ -189,23 +190,25 @@ async def reset_password_confirm(
     email = await auth_service.get_email_from_token(token)
     exist_user = await repository_users.get_user_by_email(email, db)
     if not exist_user:
-        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail='Can`t find user by email from token.')
+        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                            detail='Can`t find user by email from token.')
     
     body.password = auth_service.get_password_hash(body.password)
-    # записати новий пароль до користувача в БД:
-
     
     updated_user = await repository_users.change_password_for_user(exist_user, body.password, db)
     if updated_user is None:
-            raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail='Can`t find user by email from token.')
+        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                            detail='Can`t find user by email from token.')
 
-    # Створюємо фонове завдання надсилання листа:
-    background_tasks.add_task(send_email, updated_user.email, updated_user.username, request.base_url)  # http://127.0.0.1:8000/
+    # Створюємо фонове завдання надсилання листа:     request.base_url ->  http://127.0.0.1:8000/
+    background_tasks.add_task(send_email, updated_user.email, updated_user.username, request.base_url)  
 
     return {'user': updated_user, 'detail': 'User`s password successfully changed.'}
 
 
-@router.get('/reset-password/complete', response_class=HTMLResponse, description='Complete password reset Page')  # users/password_reset_complete.html
-async def reset_password_complete(request: Request) -> HTMLResponse:
+# users/password_reset_complete.html
+@router.get('/reset-password/complete', response_class=HTMLResponse, description='Complete password reset Page')  
+async def reset_password_complete(request: Request) -> HTMLResponse:  # _TemplateResponse ?
     """генерує сторінку повідомлення про успішність скидання паролю."""
-    return templates.TemplateResponse('password_reset_complete.html', {'request': request, 'title': 'Complete password reset'})
+    return templates.TemplateResponse('password_reset_complete.html', {'request': request, 
+                                                                       'title': 'Complete password reset'})

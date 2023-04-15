@@ -1,4 +1,4 @@
-# FastAPI + REST API example (Contacts) + Authorization
+# FastAPI + REST API example (Contacts) + Authorization + ...
 
 from fastapi import FastAPI, Depends, HTTPException, Request
 from fastapi_limiter.depends import FastAPILimiter
@@ -11,17 +11,15 @@ from sqlalchemy.orm import Session
 from sqlalchemy import text
 import uvicorn
 
-from src.database.db_connect import get_db  # tl13_2.
+from src.database.db_connect import get_db
 from src.routes import auth, contacts, users
 
 from src.conf.config import settings
 
 
-# load_dotenv()  # this should be before import on line 11-12 ? ! test or move toin-first uses (in module to 11 line)
-
 app = FastAPI()
 
-# Додаємо CORSMiddleware у застосунок
+# Add CORSMiddleware
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.cors_origins.split(','),  # визначає список джерел, яким дозволено доступ до застосунку
@@ -51,13 +49,13 @@ async def startup():
                                decode_responses=True
                                )
     
-    # використовується для ініціалізації з’єднання з Redis. Це дає змогу використовувати Redis 
-    # для зберігання інформації про обмеження швидкості
+    # використовується для ініціалізації з’єднання з Redis, що дає змогу використовувати Redis 
+    # для зберігання інформації про обмеження швидкості:
     await FastAPILimiter.init(client)
 
 
 @app.get('/', response_class=HTMLResponse, description='Main Page')
-async def root(request: Request) -> HTMLResponse:
+async def root(request: Request) -> HTMLResponse:  # _TemplateResponse ?
     # return {' Welcome! ': ' The personal virtual assistant is ready to go, I`m kidding ^_^ '}
     return templates.TemplateResponse('index.html', {'request': request, 'title': 'The personal virtual assistant...'})
 

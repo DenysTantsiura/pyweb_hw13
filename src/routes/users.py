@@ -1,7 +1,6 @@
-# дозволити користувачеві завантажувати свої аватари в нашому REST API. Для цього визначимо новий роутинг /api/users
 import cloudinary
 import cloudinary.uploader
-from fastapi import APIRouter, Depends, status, UploadFile, File
+from fastapi import APIRouter, Depends, UploadFile, File  # status
 from sqlalchemy.orm import Session
 
 from src.conf.config import settings
@@ -35,12 +34,13 @@ async def update_avatar_user(
         secure=True
         )
 
-    # завантаження файлу зображення, при цьому параметр public_id встановлюємо відповідно до імені поточного користувача та папки NotesApp
+    # завантаження файлу зображення, при цьому параметр public_id встановлюємо відповідно
+    # до імені поточного користувача та папки PVA_App:
     cloudinary.uploader.upload(file.file, public_id=f'PVA_App/{current_user.username}', overwrite=True)
     src_url = (
                cloudinary
                .CloudinaryImage(f'PVA_App/{current_user.username}')
-               .build_url(width=250, height=250, crop='fill')  # , version=r.get('version')
+               .build_url(width=250, height=250, crop='fill')  # , version=r.get('version')    r?
                )
     
     user = await repository_users.update_avatar(current_user.email, src_url, db)
