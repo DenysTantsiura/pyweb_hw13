@@ -21,21 +21,15 @@ from src.conf.config import settings
 
 app = FastAPI()
 
-# Визначаємо список доменів, які можуть надсилати запити до нашого API
-origins = [ 
-    "http://localhost:3000",
-    "http://localhost:5000",
-    "http://localhost:8000",
-    ]
-
 # Додаємо CORSMiddleware у застосунок
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,  # визначає список джерел, яким дозволено доступ до застосунку
-    allow_credentials=True,  # True означає, що дозволені кросдоменні запити з урахуванням облікових даних
-    allow_methods=["*"],  # список дозволених методів HTTP, які можуть використовуватися для кросдоменних запитів
-    allow_headers=["*"],  # список дозволених заголовків HTTP, які можуть використовуватися в кросдоменних запитах
-)
+    allow_origins=settings.cors_origins.split(','),  # визначає список джерел, яким дозволено доступ до застосунку
+    # True означає, що дозволені кросдоменні запити з урахуванням облікових даних:
+    allow_credentials=True if settings.cors_credentials in ('y', 'yes', 'True', 'true', 'on', '1') else False,  
+    allow_methods=settings.cors_methods.split(','),  # дозволені методи HTTP, для кросдоменних запитів
+    allow_headers=settings.cors_headers.split(','),  # дозволені заголовки HTTP, для кросдоменних запитів
+    )
 
 app.include_router(auth.router, prefix='/api')
 app.include_router(contacts.router, prefix='/api')

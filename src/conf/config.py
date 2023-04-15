@@ -16,6 +16,10 @@ class Settings(BaseSettings):
     redis_port: int = 6379
     limit_crit: int
     limit_warn: int
+    cors_origins: str
+    cors_credentials: str
+    cors_methods: str
+    cors_headers: str
 
     class Config:
         """Задає розташування файлу середовища .env та його кодування utf-8. 
