@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 
 from fastapi_mail import FastMail, MessageSchema, ConnectionConfig, MessageType
@@ -9,9 +10,9 @@ from src.services.auth import auth_service
 
 
 conf = ConnectionConfig(
-    MAIL_USERNAME=get_password('metamail.txt'),
-    MAIL_PASSWORD=get_password('metakey.txt'),
-    MAIL_FROM=EmailStr(get_password('metamail.txt')),
+    MAIL_USERNAME=os.environ.get('POST_USERNAME') or get_password('metamail.txt'),
+    MAIL_PASSWORD=os.environ.get('POST_KEY') or get_password('metakey.txt'),
+    MAIL_FROM=EmailStr(os.environ.get('POST_USERNAME') or get_password('metamail.txt')),
     MAIL_PORT=465,
     MAIL_SERVER='smtp.meta.ua',
     MAIL_FROM_NAME='Den`s application',  # 'Desired Name',

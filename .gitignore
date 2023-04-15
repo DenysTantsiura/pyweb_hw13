@@ -137,3 +137,4 @@ key_redis.txt
 key*.txt
 *key*.txt
 
+.env

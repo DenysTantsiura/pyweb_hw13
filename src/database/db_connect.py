@@ -1,9 +1,11 @@
 # підключення до бази даних (sqlite/PostgreSQL)
 import configparser  # for work with *.ini (config.ini)
 import logging
+import os
 import pathlib
 from typing import Optional
 
+from dotenv import load_dotenv
 from sqlalchemy import (
     create_engine, 
     Engine,
@@ -14,6 +16,8 @@ from sqlalchemy.orm import sessionmaker
 from src.authentication import get_password
 
 
+load_dotenv()
+
 CONFIG_FILE = 'config.ini'
 
 logging.basicConfig(level=logging.DEBUG, format='%(threadName)s %(message)s')
@@ -23,7 +27,7 @@ config = configparser.ConfigParser()
 config.read(file_config)
 
 user = config.get('DB_DEV', 'user')
-password = get_password()
+password = os.environ.get('POSTGRES_KEY') or get_password()
 database = config.get('DB_DEV', 'db_name')
 host = config.get('DB_DEV', 'host')
 port = config.get('DB_DEV', 'port')

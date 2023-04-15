@@ -3,6 +3,7 @@
 Вона має кілька методів для підтримки операцій аутентифікації та авторизації.
 """
 from datetime import datetime, timedelta
+import os
 import pickle
 from typing import Optional
 
@@ -16,7 +17,6 @@ from sqlalchemy.orm import Session
 
 from src.database.db_connect import get_db
 from src.repository import users as repository_users
-
 from src.authentication import get_password
 
 
@@ -35,7 +35,7 @@ class Auth:
     client = redis.Redis(
             host='redis-12148.c135.eu-central-1-1.ec2.cloud.redislabs.com',
             port=12148,
-            password=get_password('key_redis.txt'))
+            password=os.environ.get('REDIS_KEY') or get_password('key_redis.txt'))
             
     # cache = RedisLRU(client)
 

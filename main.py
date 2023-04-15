@@ -1,4 +1,5 @@
 # FastAPI + REST API example (Contacts) + Authorization
+
 from fastapi import FastAPI, Depends, HTTPException, Request
 from fastapi.responses import JSONResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
@@ -10,6 +11,8 @@ import uvicorn
 from src.database.db_connect import get_db  # tl13_2.
 from src.routes import auth, contacts
 
+
+# load_dotenv()  # this should be before import on line 11-12 ? ! test or move toin-first uses (in module to 11 line)
 
 app = FastAPI()
 
