@@ -15,7 +15,15 @@ router = APIRouter(prefix="/users", tags=["users"])
 
 
 @router.get("/me/", response_model=UserDb)
-async def read_users_me(current_user: User = Depends(auth_service.get_current_user)):
+async def read_users_me(current_user: User = Depends(auth_service.get_current_user)) -> User:
+    """
+    The read_users_me function is a GET endpoint that returns the current user's information.
+    It uses the auth_service to get the current user, and then returns it.
+
+    :param current_user: User: Get the current user
+    :return: The current user
+    :doc-author: Trelent
+    """
     return current_user
 
 
@@ -24,9 +32,17 @@ async def update_avatar_user(
                              file: UploadFile = File(), 
                              current_user: User = Depends(auth_service.get_current_user),
                              db: Session = Depends(get_db)
-                             ):
-    """For updating avatar."""
-    # Функція cloudinary.config використовується для налаштування з’єднання з обліковим записом cloudinary
+                             ) -> User:
+    """
+    The update_avatar_user function is used to update the avatar of a user.
+
+    :param file: UploadFile: Upload the image file
+    :param current_user: User: Get the current user from the database
+    :param db: Session: Access the database
+    :return: A user object with the updated avatar_url field
+    :doc-author: Trelent
+    """
+    # The cloudinary.config function is used to configure the connection to the cloudinary account
     cloudinary.config(
         cloud_name=settings.cloudinary_name,
         api_key=settings.cloudinary_api_key,
@@ -34,8 +50,7 @@ async def update_avatar_user(
         secure=True
         )
 
-    # завантаження файлу зображення, при цьому параметр public_id встановлюємо відповідно
-    # до імені поточного користувача та папки PVA_App:
+    # the public_id parameter is set according to the name of the current user and the PVA_App folder:
     cloudinary.uploader.upload(file.file, public_id=f'PVA_App/{current_user.username}', overwrite=True)
     src_url = (
                cloudinary

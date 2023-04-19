@@ -1,7 +1,3 @@
-"""
-визначимо клас служби аутентифікації Auth. 
-Вона має кілька методів для підтримки операцій аутентифікації та авторизації.
-"""
 from datetime import datetime, timedelta
 import pickle
 from typing import Optional
@@ -19,17 +15,13 @@ from src.conf.config import settings
 
 
 class Auth:
+    """The main class for authentication functions."""
     pwd_context = CryptContext(schemes=['bcrypt'], deprecated='auto')
     SECRET_KEY = settings.secret_key
     ALGORITHM = settings.algorithm
-    """забезпечує авторизацію по bearer токену. Він потрібний для валідації JWT токена, 
-    який буде використовуватися як аутентифікаційні дані користувача.
-    вказуємо йому, де в нашому застосунку буде маршрут для аутентифікації tokenUrl='/api/auth/login'. І
-    він, відповідно до стандарту, очікує на пару username і password, але, 
-    замість значення username, будемо підставляти в полі email користувача."""
-    oauth2_scheme = OAuth2PasswordBearer(tokenUrl='/api/auth/login')  # 
+
+    oauth2_scheme = OAuth2PasswordBearer(tokenUrl='/api/auth/login')
     # https://dev.to/ramko9999/host-and-use-redis-for-free-51if
-    # Redis connect (to connect.py? but @cache, ... but external get_password()...):
     client = redis.Redis(
                          host=settings.redis_host,
                          port=settings.redis_port,
@@ -37,22 +29,45 @@ class Auth:
                          )
 
     def verify_password(self, plain_password, hashed_password) -> bool:
-        """перевіряє, чи відповідає простий текстовий пароль хешованому паролю."""
+        """
+        The verify_password function takes a plain-text password and hashed password as arguments.
+        It then uses the verify method of the pwd_context object to check if they match.
+        The result is returned as a boolean value.
+
+        :param self: Represent the instance of the class
+        :param plain_password: Pass in the password that is being checked
+        :param hashed_password: Compare the hashed password in the database with a plain text password
+        :return: A boolean value
+        :doc-author: Trelent
+        """
         return self.pwd_context.verify(plain_password, hashed_password)
 
     def get_password_hash(self, password: str):
-        """хешує пароль за допомогою алгоритму bcrypt. (look at line 31)
-        повертає зашифрований пароль, згенерований за допомогою методу hash з класу CryptContext."""
+        """
+        The get_password_hash function takes a password as input and returns the hash of that password.
+        The hash is generated using the pwd_context object, which is an instance of Flask-Bcrypt's Bcrypt class.
+
+        :param self: Represent the instance of the class
+        :param password: str: Pass the password to be hashed
+        :return: A password hash
+        :doc-author: Trelent
+        """
         return self.pwd_context.hash(password)
 
     # define a function to generate a new access token
     async def create_access_token(self, data: dict, expires_delta: Optional[float] = None):
-        """створює веб-токен JWT з областю дії scope, що дорівнює значенню access_token, 
-        який буде використовуватись для авторизації користувача для доступу до захищених ресурсів.
-        приймає два параметри:
-        data - словник, що містить корисні дані для кодування у форматі JWT;
-        expires_delta - необов'язковий параметр, що визначає час життя токена в секундах. 
-            Якщо параметр не вказано, час життя за замовчуванням складає 15 хвилин."""
+        """
+        The create_access_token function creates a new access token.
+            Args:
+                data (dict): A dictionary containing the claims to be encoded in the JWT.
+                expires_delta (Optional[float]): An optional timedelta of seconds for the expiration time of this token.
+
+        :param self: Represent the instance of the class
+        :param data: dict: Pass the data that will be encoded into the token
+        :param expires_delta: Optional[float]: Set the expiration time of the access token
+        :return: An encoded access token
+        :doc-author: Trelent
+        """
         to_encode = data.copy()
         if expires_delta:
             expire = datetime.utcnow() + timedelta(seconds=expires_delta)
@@ -66,10 +81,19 @@ class Auth:
 
     # define a function to generate a new refresh token
     async def create_refresh_token(self, data: dict, expires_delta: Optional[float] = None):
-        """створює JWT з областю дії refresh_token, який можна використовувати для оновлення 
-        токена доступу access_token після закінчення терміну його дії.
-        аналогічний методу create_access_token, але за замовчуванням має час життя 7 днів і 
-        область дії `scope'': 'refresh_token'."""
+        """
+        The create_refresh_token function creates a refresh token for the user.
+            Args:
+                data (dict): A dictionary containing the user's id and username.
+                expires_delta (Optional[float]): The time in seconds until the refresh token expires. Defaults to None,
+                which is 7 days from creation date.
+
+        :param self: Make the function a method of the class
+        :param data: dict: Pass the data to be encoded
+        :param expires_delta: Optional[float]: Set the expiration time of the refresh token
+        :return: A refresh token
+        :doc-author: Trelent
+        """
         to_encode = data.copy()
         if expires_delta:
             expire = datetime.utcnow() + timedelta(seconds=expires_delta)
@@ -82,10 +106,14 @@ class Auth:
         return encoded_refresh_token
 
     async def decode_refresh_token(self, refresh_token: str):
-        """метод декодує токен оновлення refresh_token для отримання електронної пошти користувача.
-        декодує токен оновлення refresh_token та повертає з корисного навантаження email користувача. 
-        Якщо корисне навантаження токена не має області дії, що дорівнює 'refresh_token', воно 
-        викликає виняток HTTPException з кодом стану 401 та подробицями detail=..."""
+        """
+        The decode_refresh_token function is used to decode the refresh token.
+
+        :param self: Represent the instance of the class
+        :param refresh_token: str: Pass in the refresh token that is being decoded
+        :return: The email of the user who is trying to refresh their access token
+        :doc-author: Trelent
+        """
         try:
             payload = jwt.decode(refresh_token, self.SECRET_KEY, algorithms=[self.ALGORITHM])
             if payload['scope'] == 'refresh_token':
@@ -100,16 +128,24 @@ class Auth:
 
     # @cache
     async def get_current_user(self, token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
-        """авторизує користувача, розшифровуючи токен доступу access_token та, перевіряючи існування користувача у БД.
-        використовується для авторизації користувача на основі його токена доступу: access_token. 
-        При цьому ми використовуємо клас OAuth2PasswordBearer для витягування токена із запиту, а потім 
-        декодуємо токен payload = jwt.decode(token, self.SECRET_KEY, algorithms=[self.ALGORITHM]) 
-        з використанням атрибутів SECRET_KETH класу Auth."""
+        """
+        The get_current_user function is a dependency that will be used in the
+            protected endpoints. It uses the OAuth2 Dependency to retrieve a user's JWT from
+            the Authorization header. Then it decodes and verifies this token with our SECRET_KEY,
+            which was generated when we ran uvicorn for the first time. If everything checks out,
+            then we return an object of type UserInDB (which is defined in schemas/users).
+
+        :param self: Represent the instance of the class
+        :param token: str: Get the token from the authorization header
+        :param db: Session: Get the current database session
+        :return: A user object
+        :doc-author: Trelent
+        """
         credentials_exception = HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail='Could not validate credentials',
             headers={'WWW-Authenticate': 'Bearer'},
-        )
+            )
 
         try:
             # Decode JWT
@@ -142,15 +178,16 @@ class Auth:
         return user
     
     def create_email_token(self, data: dict):
-        """Всередині сервісу Auth реалізуємо метод create_email_token.
-        Поверни закодований токен, що дійсний 7 днів. Саме стільки ми чекатимемо від 
-        користувача верифікації. А, оскільки під час створення в полі sub ми помістили email, 
-        він повністю персоналізований для користувача.
+        """
+        The create_email_token function takes in a dictionary of data and returns a token.
+        The token is created by encoding the data with the SECRET_KEY and ALGORITHM.
+        The encoded data includes an 'iat' (issued at) timestamp, as well as an expiration date 7 days from now.
 
-        Далі створюємо об’єкт MessageSchema із зазначеними темою, одержувачами та тілом шаблону, 
-        а потім передаємо його об’єкту FastMail. 
-        Наприкінці викликаємо метод send_message, що передає повідомлення та ім’я шаблону email_template.html. 
-        Сам шаблон знаходиться в папці templates."""
+        :param self: Make the function a method of the class
+        :param data: dict: Pass in the user's email address and username
+        :return: A token that is encoded with the user's email address, a timestamp and an expiration date
+        :doc-author: Trelent
+        """
         to_encode = data.copy()
         expire = datetime.utcnow() + timedelta(days=7)
         to_encode.update({'iat': datetime.utcnow(), 'exp': expire})
@@ -172,12 +209,19 @@ class Auth:
 
     # define a function to generate a new access token
     async def create_password_reset_token(self, data: dict, expires_delta: Optional[float] = None):
-        """створює веб-токен JWT з областю дії scope, що дорівнює значенню password_reset_token, 
-        який буде використовуватись для скидання паролю користувача.
-        приймає два параметри:
-        data - словник, що містить корисні дані для кодування у форматі JWT;
-        expires_delta - необов'язковий параметр, що визначає час життя токена в секундах. 
-            Якщо параметр не вказано, час життя за замовчуванням складає 45 хвилин."""
+        """
+        The create_password_reset_token function creates a password reset token for the user.
+            The function takes in two arguments: data and expires_delta. Data is a dictionary containing the user's
+            email address, while expires_delta is an optional argument that specifies how long the token will be valid
+            for (in seconds).
+            If no value is passed to expires_delta, then it defaults to 45 minutes.
+
+        :param self: Access the class attributes and methods
+        :param data: dict: Pass in the user's email address
+        :param expires_delta: Optional[float]: Set the expiration time for the token
+        :return: A jwt token
+        :doc-author: Trelent
+        """
         to_encode = data.copy()
         if expires_delta:
             expire = datetime.utcnow() + timedelta(seconds=expires_delta)
@@ -190,8 +234,17 @@ class Auth:
         return encoded_password_reset_token
         
     async def reset_password(self, token: str):
-        """ генерує посилання для скидання паролю, яке буде використовуватися лише один раз. 
-        Після цього надсилає це посилання на адресу електронної пошти користувача."""
+        """
+        The reset_password function takes a token as an argument and returns the email address of the user who requested
+        the password reset. The function first decodes the token using PyJWT, then extracts and returns
+        the email address from
+        the payload.
+
+        :param self: Represent the instance of the class
+        :param token: str: Pass in the token that was sent to the user's email
+        :return: The email of the user who requested a password reset
+        :doc-author: Trelent
+        """
         try:
             payload = jwt.decode(token, self.SECRET_KEY, algorithms=[self.ALGORITHM])
             email = payload['sub']
