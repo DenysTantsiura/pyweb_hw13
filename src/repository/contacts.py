@@ -15,13 +15,13 @@ from src.schemes import ContactModel, CatToNameModel, ContactResponse
 async def get_contacts(
                        user: User, 
                        db: Session
-                       ) -> Page[ContactResponse]:
+                       ) -> Page:
     """
     The get_contacts function returns a paginated list of contacts for the user.
 
     :param user: User: Identify the user who is making the request
     :param db: Session: Access the database
-    :return: Page[ContactResponse]: A page object
+    :return: Page: A page object
     :doc-author: Trelent
     """
     return paginate(
@@ -217,7 +217,7 @@ async def search_by_fields_or(
                               query_str: str,
                               user: User,
                               db: Session
-                              ) -> Page[ContactResponse]:
+                              ) -> Page:
     """
     The search_by_fields_or function searches for contacts by name, last_name, email or phone.
         It returns a list of contacts that match the search criteria.
@@ -225,7 +225,7 @@ async def search_by_fields_or(
     :param query_str: str: Search for a contact by name, last_name, email or phone
     :param user: User: Filter the contacts by user
     :param db: Session: Pass the database session to the function
-    :return: Page[ContactResponse]: A page object with the results of the query
+    :return: Page: A page object with the results of the query
     :doc-author: Trelent
     """
     return paginate(
@@ -248,7 +248,7 @@ async def search_by_like_fields_or(
                                    query_str: str,
                                    user: User,
                                    db: Session
-                                   ) -> Page[ContactResponse]:
+                                   ) -> Page:
     """
     The search_by_like_fields_or function searches for contacts by name, last_name, email or phone.
     It returns a list of contacts that match the search criteria.
@@ -256,7 +256,7 @@ async def search_by_like_fields_or(
     :param query_str: str: Filter the results by a string
     :param user: User: Get the user id from the token
     :param db: Session: Access the database
-    :return: Page[ContactResponse]: A page of contacts that match the search criteria
+    :return: Page: A page of contacts that match the search criteria
     :doc-author: Trelent
     """
     return paginate(
@@ -281,7 +281,7 @@ async def search_by_like_fields_and(
                                     part_phone: int | None,
                                     user: User,
                                     db: Session
-                                    ) -> Page[ContactResponse]:
+                                    ) -> Page:
     """
     The search_by_like_fields_and function searches for contacts by the given fields.
         The search is case insensitive and will return all contacts that match any of the given fields.
@@ -293,7 +293,7 @@ async def search_by_like_fields_and(
     :param part_phone: int | None: Search by phone number
     :param user: User: Check if the user is logged in
     :param db: Session: Access the database
-    :return: Page[ContactResponse]: A page object
+    :return: Page: A page object
     :doc-author: Trelent
     """
     if not part_name and not part_last_name and not part_email and not part_phone:
@@ -317,7 +317,7 @@ async def search_by_birthday_celebration_within_days(
                                                      meantime: int,   
                                                      user: User,
                                                      db: Session
-                                                     ) -> Page[ContactResponse]:
+                                                     ) -> Page:
     """
     The search_by_birthday_celebration_within_days function searches for contacts whose birthday is within a given
     number of days.
@@ -325,7 +325,7 @@ async def search_by_birthday_celebration_within_days(
     :param meantime: int: Get the number of days in which we want to search for birthdays
     :param user: User: Get the user_id from the user object
     :param db: Session: Pass the database session to the function
-    :return: Page[ContactResponse]: A paginated list of contacts with birthdays within the given number of days
+    :return: Page: A paginated list of contacts with birthdays within the given number of days
     :doc-author: Trelent
     """
     today = date.today()

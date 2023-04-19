@@ -22,12 +22,12 @@ router = APIRouter(prefix='/contacts')  # tags=['contacts']
             '/', 
             description=f'No more than {settings.limit_crit} requests per minute',
             dependencies=[Depends(RateLimiter(times=settings.limit_crit, seconds=60))],
-            response_model=Page[ContactResponse], tags=['all_contacts']
+            response_model=Page, tags=['all_contacts']
             )
 async def get_contacts(
                        db: Session = Depends(get_db), 
                        current_user: User = Depends(auth_service.get_current_user)
-                       ) -> Page[ContactResponse]:
+                       ) -> Page:
     """
     The get_contacts function returns a list of contacts for the current user.
 
@@ -187,13 +187,13 @@ async def change_name_contact(
             '/search_by_birthday_celebration_within_days/{days}', 
             description=f'No more than {settings.limit_warn} requests per minute',
             dependencies=[Depends(RateLimiter(times=settings.limit_warn, seconds=60))],
-            response_model=Page[ContactResponse], tags=['search']
+            response_model=Page, tags=['search']
             )
 async def search_by_birthday_celebration_within_days(
                                                      days: int,
                                                      db: Session = Depends(get_db),
                                                      current_user: User = Depends(auth_service.get_current_user)
-                                                     ) -> Page[ContactResponse]:
+                                                     ) -> Page:
     """
     The search_by_birthday_celebration_within_days function searches for contacts that have a birthday celebration
     within the specified number of days.
@@ -253,13 +253,13 @@ async def search_by_fields_and(
             '/search_by_fields_or/{query_str}', 
             description=f'No more than {settings.limit_warn} requests per minute',
             dependencies=[Depends(RateLimiter(times=settings.limit_warn, seconds=60))],
-            response_model=Page[ContactResponse], tags=['search']
+            response_model=Page, tags=['search']
             )
 async def search_by_fields_or(
                               query_str: str,
                               db: Session = Depends(get_db),
                               current_user: User = Depends(auth_service.get_current_user)
-                              ) -> Page[ContactResponse]:
+                              ) -> Page:
     """
     The search_by_fields_or function searches for contacts by a query string.
     The search is performed on the first_name, last_name, and email fields of the contact table.
@@ -282,13 +282,13 @@ async def search_by_fields_or(
             '/search_by_like_fields_or/{query_str}', 
             description=f'No more than {settings.limit_warn} requests per minute',
             dependencies=[Depends(RateLimiter(times=settings.limit_warn, seconds=60))],
-            response_model=Page[ContactResponse], tags=['search']
+            response_model=Page, tags=['search']
             )
 async def search_by_like_fields_or(
                                    query_str: str,
                                    db: Session = Depends(get_db),
                                    current_user: User = Depends(auth_service.get_current_user)
-                                   ) -> Page[ContactResponse]:
+                                   ) -> Page:
     """
     The search_by_like_fields_or function searches for contacts by a query string.
     The search is performed on the first_name, last_name, and email fields of the contact table.
@@ -311,7 +311,7 @@ async def search_by_like_fields_or(
             '/search_by_like_fields_and/', 
             description=f'No more than {settings.limit_warn} requests per minute',
             dependencies=[Depends(RateLimiter(times=settings.limit_warn, seconds=60))],
-            response_model=Page[ContactResponse], tags=['search']
+            response_model=Page, tags=['search']
             )
 async def search_by_like_fields_and(
                                     name: str | None = None,
@@ -320,7 +320,7 @@ async def search_by_like_fields_and(
                                     phone: int | None = None,
                                     db: Session = Depends(get_db),
                                     current_user: User = Depends(auth_service.get_current_user)
-                                    ) -> Page[ContactResponse]:
+                                    ) -> Page:
     """
     The search_by_like_fields_and function searches for a contact by name, last_name, email or phone.
         The search is case insensitive and will return all contacts that match the query.

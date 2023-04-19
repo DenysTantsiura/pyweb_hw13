@@ -1,11 +1,8 @@
-
+"""Connection to DataBase."""
 import logging
 from typing import Optional
 
-from sqlalchemy import (
-                        create_engine, 
-                        Engine,
-                        )
+from sqlalchemy import create_engine, Engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
@@ -21,11 +18,11 @@ def create_connection(*args, **kwargs) -> tuple[Optional[Engine], Optional[sessi
     """
     The create_connection function creates a connection to the database.
         Args:
-            *args (tuple): A tuple of arguments.
-            **kwargs (dict): A dictionary of keyword arguments.
+            `*args` (tuple): A tuple of arguments.
+            `**kwargs` (dict): A dictionary of keyword arguments.
 
-    :param *args: Send a non-keyworded variable length argument list to the function
-    :param **kwargs: Pass a variable number of keyword arguments to a function
+    :param `*args`: Send a non-keyworded variable length argument list to the function
+    :param `**kwargs`: Pass a variable number of keyword arguments to a function
     :return: A tuple of two values: an engine and a session
     :doc-author: Trelent
     """
