@@ -9,7 +9,6 @@ from fastapi_pagination.ext.sqlalchemy import paginate
 from pydantic import EmailStr
 from sqlalchemy.orm import Session
 
-from src.services.pagination import PageParams
 from src.database.models import Contact, User
 from src.repository.contacts import (
     get_contacts,
@@ -40,20 +39,19 @@ class TestContacts(unittest.IsolatedAsyncioTestCase):
         self.user = User(id=1)
 
     async def test_get_contacts(self):
-        contacts = [Contact() for _ in range(1)]
-        # self.session.query().filter().offset().limit().all.return_value = contacts
-        self.session.query().filter().order_by().return_value = contacts
-        input(f'\n{contacts=}\n')
-        result = await get_contacts(user=self.user, db=self.session, pagination_params=Params(page=1, size=10, max_page_size=50))  # page=1, size=10   # pagination_params=Page(page=1, size=10)
-        # add_pagination(contacts)
-        input(f'\n{contacts=}\n')
-        input(f'\n{result=}\n')
-        self.assertEqual(result, paginate(contacts, pagination_params=Params(page=1, size=10, max_page_size=50)))
-        # self.assertEqual(result, paginate(contacts, Params(page=1, size=10)))  # offset=1, limit=10
-        
-        
-        # self.assertIs(result, paginate(contacts, Params(page=1, size=10)))
-    
+        TEST_RANGE = 12
+        PAGE = 1
+        SIZE = 10
+        contacts = [Contact(id=i+1, name=f'Name_{i+1}') for i in range(TEST_RANGE)]
+        self.session.query.return_value.filter.return_value.order_by.return_value.count.return_value = 10
+        self.session.query().filter().order_by().limit().offset().all.return_value = contacts
+        result = await get_contacts(user=self.user, db=self.session, pagination_params=Params(page=PAGE, size=SIZE))
+        self.assertIsInstance(result, Page)
+        self.assertEqual(result.page, PAGE)
+        self.assertEqual(result.total, SIZE)
+        self.assertEqual(len(result.items), TEST_RANGE)
+        [self.assertEqual(result.items[i].name, f'Name_{i+1}') for i in range(len(result.items))]
+     
     async def test_get_contact_found(self):
         contact = Contact(
                           user_id=self.user, 
@@ -65,10 +63,12 @@ class TestContacts(unittest.IsolatedAsyncioTestCase):
                           birthday=date.today(),
                           description='...',
                           user=self.user
-                          )  
+                          )
         self.session.query().filter().filter_by().first.return_value = contact
         result = await get_contact(contact_id=1, user=self.user, db=self.session)
+        self.assertIsInstance(result, Contact)
         self.assertEqual(result, contact)
+        [self.assertEqual(result.__dict__[el], contact.__dict__[el]) for el in contact.__dict__]
 
     async def test_get_contact_not_found(self):
         self.session.query().filter().filter_by().first.return_value = None
@@ -86,12 +86,14 @@ class TestContacts(unittest.IsolatedAsyncioTestCase):
                             )
         self.session.query().filter().filter_by().first.return_value = None
         result = await create_contact(body=body, user=self.user, db=self.session)
-        self.assertEqual(result.name, body.name)
-        self.assertEqual(result.last_name, body.last_name)
-        self.assertEqual(result.email, body.email)
-        self.assertEqual(result.phone, body.phone)
-        self.assertEqual(result.birthday, body.birthday)
-        self.assertEqual(result.description, body.description)
+        # self.assertIsInstance(result, Contact)
+        # self.assertEqual(result.name, body.name)
+        # self.assertEqual(result.last_name, body.last_name)
+        # self.assertEqual(result.email, body.email)
+        # self.assertEqual(result.phone, body.phone)
+        # self.assertEqual(result.birthday, body.birthday)
+        # self.assertEqual(result.description, body.description)
+        [self.assertEqual(result.__dict__[el], body.__dict__[el]) for el in body.__dict__]
         self.assertTrue(hasattr(result, "id"))
 
     async def test_create_contact_dublicat(self):
@@ -123,13 +125,13 @@ class TestContacts(unittest.IsolatedAsyncioTestCase):
         contact = Contact()
         self.session.query().filter().filter_by().first.return_value = contact
         result = await remove_contact(contact_id=1, user=self.user, db=self.session)
+        self.assertIsInstance(result, Contact)
         self.assertEqual(result, contact)
 
     async def test_remove_contact_not_found(self):
         self.session.query().filter().filter_by().first.return_value = None
         result = await remove_contact(contact_id=1, user=self.user, db=self.session)
         self.assertIsNone(result)
-
 
     async def test_update_contact_found(self):
         body = ContactModel(
@@ -154,8 +156,8 @@ class TestContacts(unittest.IsolatedAsyncioTestCase):
         self.session.query().filter().filter_by().first.return_value = contact
         self.session.commit.return_value = None
         result = await update_contact(contact_id=1, body=body, user=self.user, db=self.session)
+        self.assertIsInstance(result, Contact)
         self.assertEqual(result, contact)
-
 
     async def test_update_contact_not_found(self):
         body = ContactModel(
@@ -169,6 +171,18 @@ class TestContacts(unittest.IsolatedAsyncioTestCase):
         self.session.commit.return_value = None
         result = await update_contact(contact_id=1, body=body, user=self.user, db=self.session)
         self.assertIsNone(result)
+
+
+    async def test_change_name_contact(self):
+        body = CatToNameModel(name='New_Name')
+        contact = Contact(id=1, name='Name', email=EmailStr('New_email@mail.com'))
+        self.session.query().filter().filter_by().first.return_value = contact
+        self.session.commit.return_value = None
+        result = await change_name_contact(body=body, contact_id=1, user=self.user, db=self.session)
+        self.assertIsInstance(result, Contact)
+        self.assertEqual(result.name, body.name)
+        self.assertEqual(result, contact)
+
 
 '''
     async def test_update_status_contact_found(self):

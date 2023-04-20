@@ -4,15 +4,13 @@ from typing import Optional
 from fastapi import HTTPException, status
 from fastapi.encoders import jsonable_encoder
 from fastapi_pagination import Page, Params
-# from fastapi_pagination import PaginationParams
-from fastapi_pagination.bases import RawParams
+from fastapi_pagination.bases import AbstractPage, AbstractParams, RawParams
 from fastapi_pagination.ext.sqlalchemy import paginate
 from sqlalchemy import cast, func, or_, String
 from sqlalchemy.orm import Session
 
 from src.database.models import Contact, User
 from src.schemes import ContactModel, CatToNameModel, ContactResponse
-from src.services.pagination import PageParams
 
 
 async def get_contacts(
@@ -31,7 +29,7 @@ async def get_contacts(
     return paginate(
                     query=db.query(Contact)
                     .filter(Contact.user_id == user.id)
-                    .order_by(Contact.name),  # params=pagination_params
+                    .order_by(Contact.name),
                     params=pagination_params
                     )
 
