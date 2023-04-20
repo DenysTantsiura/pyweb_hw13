@@ -2,7 +2,9 @@ from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, status, Path
 from fastapi_limiter.depends import RateLimiter
-from fastapi_pagination import Page, add_pagination
+from fastapi_pagination import add_pagination, Page, Params
+from fastapi_pagination.bases import RawParams
+from fastapi_pagination.ext.sqlalchemy import paginate
 from sqlalchemy.orm import Session
 
 from src.database.db_connect import get_db
@@ -12,7 +14,7 @@ from src.schemes import ContactModel, ContactResponse, CatToNameModel
 from src.services.auth import auth_service
 
 from src.conf.config import settings
-
+from src.services.pagination import PageParams
 
 router = APIRouter(prefix='/contacts')  # tags=['contacts']
 
@@ -21,12 +23,13 @@ router = APIRouter(prefix='/contacts')  # tags=['contacts']
 @router.get(
             '/', 
             description=f'No more than {settings.limit_crit} requests per minute',
-            dependencies=[Depends(RateLimiter(times=settings.limit_crit, seconds=60))],
+            dependencies=[Depends(RateLimiter(times=settings.limit_crit, seconds=60))],  # , pagination_params = PaginationParams(page=1, page_size=10)],
             response_model=Page, tags=['all_contacts']
             )
 async def get_contacts(
                        db: Session = Depends(get_db), 
-                       current_user: User = Depends(auth_service.get_current_user)
+                       current_user: User = Depends(auth_service.get_current_user),
+                       pagination_params: RawParams = Depends()
                        ) -> Page:
     """
     The get_contacts function returns a list of contacts for the current user.
@@ -36,7 +39,7 @@ async def get_contacts(
     :return: A list of contacts
     :doc-author: Trelent
     """
-    contacts = await repository_contacts.get_contacts(current_user, db)
+    contacts = await repository_contacts.get_contacts(current_user, db, pagination_params)
 
     return contacts
 

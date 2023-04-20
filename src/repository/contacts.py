@@ -3,18 +3,22 @@ from typing import Optional
 
 from fastapi import HTTPException, status
 from fastapi.encoders import jsonable_encoder
-from fastapi_pagination import Page
+from fastapi_pagination import Page, Params
+# from fastapi_pagination import PaginationParams
+from fastapi_pagination.bases import RawParams
 from fastapi_pagination.ext.sqlalchemy import paginate
 from sqlalchemy import cast, func, or_, String
 from sqlalchemy.orm import Session
 
 from src.database.models import Contact, User
 from src.schemes import ContactModel, CatToNameModel, ContactResponse
+from src.services.pagination import PageParams
 
 
 async def get_contacts(
                        user: User, 
-                       db: Session
+                       db: Session,
+                       pagination_params: RawParams
                        ) -> Page:
     """
     The get_contacts function returns a paginated list of contacts for the user.
@@ -27,7 +31,8 @@ async def get_contacts(
     return paginate(
                     db.query(Contact)
                     .filter(Contact.user_id == user.id)
-                    .order_by(Contact.name)
+                    .order_by(Contact.name),
+                    pagination_params
                     )
 
 
@@ -90,7 +95,7 @@ async def update_contact(
                          body: ContactModel,
                          user: User,
                          db: Session
-                         ) -> Contact:
+                         ) -> Optional[Contact]:
     """
     Update a specific record by its ID. Takes the ContactModel object and updates the information from it
     by the name of the record. If the record does not exist - None is returned.
@@ -103,10 +108,15 @@ async def update_contact(
     """
     contact: Contact = db.query(Contact).filter(Contact.user_id == user.id).filter_by(id=contact_id).first()
     # contact: Contact = db.query(Contact).filter(Contact.user_id == user.id).filter(Contact.id == contact_id).first()
+
+    db_obj_data = contact.__dict__ if contact else None
+    # db_obj_data = jsonable_encoder(contact) if contact else None
     
-    db_obj_data = jsonable_encoder(contact)
-    body_data = jsonable_encoder(body)
+    body_data = jsonable_encoder(body) if body else None
     
+    if not db_obj_data or not body_data:
+        return None
+
     for field in db_obj_data:
         if field in body_data:
             setattr(contact, field, body_data[field])
