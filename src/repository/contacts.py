@@ -17,7 +17,7 @@ from src.services.pagination import PageParams
 
 async def get_contacts(
                        user: User, 
-                       db: Session,
+                       db: Session,  # pagination_params: Page
                        pagination_params: Params
                        ) -> Page:
     """
@@ -29,10 +29,10 @@ async def get_contacts(
     :doc-author: Trelent
     """
     return paginate(
-                    db.query(Contact)
+                    query=db.query(Contact)
                     .filter(Contact.user_id == user.id)
-                    .order_by(Contact.name),
-                    pagination_params
+                    .order_by(Contact.name),  # params=pagination_params
+                    params=pagination_params
                     )
 
 

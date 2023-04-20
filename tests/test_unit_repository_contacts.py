@@ -3,7 +3,7 @@ import unittest
 from unittest.mock import MagicMock
 from fastapi import HTTPException, status
 
-from fastapi_pagination import add_pagination, Params
+from fastapi_pagination import add_pagination, Params, Page
 from fastapi_pagination.bases import RawParams
 from fastapi_pagination.ext.sqlalchemy import paginate
 from pydantic import EmailStr
@@ -44,11 +44,12 @@ class TestContacts(unittest.IsolatedAsyncioTestCase):
         # self.session.query().filter().offset().limit().all.return_value = contacts
         self.session.query().filter().order_by().return_value = contacts
         input(f'\n{contacts=}\n')
-        result = await get_contacts(user=self.user, db=self.session, pagination_params=Params(page=1, size=10))  # page=1, size=10
+        result = await get_contacts(user=self.user, db=self.session, pagination_params=Params(page=1, size=10, max_page_size=50))  # page=1, size=10   # pagination_params=Page(page=1, size=10)
         # add_pagination(contacts)
-
+        input(f'\n{contacts=}\n')
         input(f'\n{result=}\n')
-        self.assertEqual(result, paginate(contacts, Params(page=1, size=10)))  # offset=1, limit=10
+        self.assertEqual(result, paginate(contacts, pagination_params=Params(page=1, size=10, max_page_size=50)))
+        # self.assertEqual(result, paginate(contacts, Params(page=1, size=10)))  # offset=1, limit=10
         
         
         # self.assertIs(result, paginate(contacts, Params(page=1, size=10)))

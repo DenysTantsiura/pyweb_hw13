@@ -28,7 +28,7 @@ router = APIRouter(prefix='/contacts')  # tags=['contacts']
             )
 async def get_contacts(
                        db: Session = Depends(get_db), 
-                       current_user: User = Depends(auth_service.get_current_user),
+                       current_user: User = Depends(auth_service.get_current_user),  # pagination_params: Page = Depends()
                        pagination_params: Params = Depends()
                        ) -> Page:
     """
