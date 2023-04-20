@@ -42,7 +42,7 @@ class TestContacts(unittest.IsolatedAsyncioTestCase):
         TEST_RANGE = 12
         PAGE = 1
         SIZE = 10
-        contacts = [Contact(id=i+1, name=f'Name_{i+1}') for i in range(TEST_RANGE)]
+        contacts = [Contact(id=i+1, email=EmailStr(f'Unknown{i+1}@mail.com')) for i in range(TEST_RANGE)]
         self.session.query.return_value.filter.return_value.order_by.return_value.count.return_value = 10
         self.session.query().filter().order_by().limit().offset().all.return_value = contacts
         result = await get_contacts(user=self.user, db=self.session, pagination_params=Params(page=PAGE, size=SIZE))
@@ -50,7 +50,7 @@ class TestContacts(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(result.page, PAGE)
         self.assertEqual(result.total, SIZE)
         self.assertEqual(len(result.items), TEST_RANGE)
-        [self.assertEqual(result.items[i].name, f'Name_{i+1}') for i in range(len(result.items))]
+        [self.assertEqual(result.items[i].email, f'Unknown{i+1}@mail.com') for i in range(len(result.items))]
      
     async def test_get_contact_found(self):
         contact = Contact(
@@ -172,7 +172,6 @@ class TestContacts(unittest.IsolatedAsyncioTestCase):
         result = await update_contact(contact_id=1, body=body, user=self.user, db=self.session)
         self.assertIsNone(result)
 
-
     async def test_change_name_contact(self):
         body = CatToNameModel(name='New_Name')
         contact = Contact(id=1, name='Name', email=EmailStr('New_email@mail.com'))
@@ -183,35 +182,65 @@ class TestContacts(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(result.name, body.name)
         self.assertEqual(result, contact)
 
+    async def test_search_by_fields_and_not_found(self):
+        name = 'Name'
+        last_name = 'Last_name'
+        email = 'Email_email@com.com'
+        phone = 123
+        contact = Contact(id=1, name='Name', email=EmailStr('New_email@mail.com'))
+        self.session.query().filter().filter_by().filter_by().filter_by().filter_by().first.return_value = None
+        result = await search_by_fields_and(
+                                            name=name, 
+                                            last_name=last_name, 
+                                            email=email, 
+                                            phone=phone, 
+                                            user=self.user, 
+                                            db=self.session
+                                            )
+        self.assertIsNone(result)
 
-'''
-    async def test_update_status_contact_found(self):
-        body = ContactStatusUpdate(done=True)
-        contact = Contact()
-        self.session.query().filter().first.return_value = contact
-        self.session.commit.return_value = None
-        result = await update_status_contact(contact_id=1, body=body, user=self.user, db=self.session)
+    async def test_search_by_fields_and_found(self):
+        name = 'Name'
+        email = 'New_email@mail.com'
+        contact = Contact(id=1, name='Name', email=EmailStr('New_email@mail.com'))
+        self.session.query().filter().filter_by().filter_by().first.return_value = contact
+        result = await search_by_fields_and(
+                                            name=name, 
+                                            last_name=None, 
+                                            email=email, 
+                                            phone=None, 
+                                            user=self.user, 
+                                            db=self.session
+                                            )
+        self.assertIsInstance(result, Contact)
+        self.assertEqual(result.name, name)
+        self.assertEqual(result.email, email)
         self.assertEqual(result, contact)
 
-    async def test_update_status_contact_not_found(self):
-        body = ContactStatusUpdate(done=True)
-        self.session.query().filter().first.return_value = None
-        self.session.commit.return_value = None
-        result = await update_status_contact(contact_id=1, body=body, user=self.user, db=self.session)
-        self.assertIsNone(result)
-'''
+    async def test_search_by_fields_or_found(self):
+        pass
+
+    async def test_search_by_fields_or_not_found(self):
+        pass
+
+    async def test_search_by_like_fields_or_found(self):
+        pass
+
+    async def test_search_by_like_fields_or_not_found(self):
+        pass
+
+    async def test_search_by_like_fields_and_found(self):
+        pass
+
+    async def test_search_by_like_fields_and_not_found(self):
+        pass
+
+    async def test_search_by_birthday_celebration_within_days_found(self):
+        pass
+
+    async def test_search_by_birthday_celebration_within_days_not_found(self):
+        pass
+
 
 if __name__ == '__main__':
     unittest.main()
-
-
-'''
-from fastapi_pagination import PaginationParams
-
-pagination_params = PaginationParams(page=1, page_size=10)
-
-res = get_contacts(session, user, pagination_params)
-
-paginate(db.query(…), pagination_params)
-
-'''
