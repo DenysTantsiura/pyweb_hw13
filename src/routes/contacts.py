@@ -29,7 +29,7 @@ router = APIRouter(prefix='/contacts')  # tags=['contacts']
 async def get_contacts(
                        db: Session = Depends(get_db), 
                        current_user: User = Depends(auth_service.get_current_user),
-                       pagination_params: RawParams = Depends()
+                       pagination_params: Params = Depends()
                        ) -> Page:
     """
     The get_contacts function returns a list of contacts for the current user.

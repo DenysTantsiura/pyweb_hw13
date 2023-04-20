@@ -18,7 +18,7 @@ from src.services.pagination import PageParams
 async def get_contacts(
                        user: User, 
                        db: Session,
-                       pagination_params: RawParams
+                       pagination_params: Params
                        ) -> Page:
     """
     The get_contacts function returns a paginated list of contacts for the user.

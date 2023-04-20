@@ -40,13 +40,18 @@ class TestContacts(unittest.IsolatedAsyncioTestCase):
         self.user = User(id=1)
 
     async def test_get_contacts(self):
-        contacts = [Contact() for _ in range(30)]
+        contacts = [Contact() for _ in range(1)]
         # self.session.query().filter().offset().limit().all.return_value = contacts
         self.session.query().filter().order_by().return_value = contacts
-        result = await get_contacts(user=self.user, db=self.session, pagination_params=RawParams(offset=1, limit=10))  # page=1, size=10
+        input(f'\n{contacts=}\n')
+        result = await get_contacts(user=self.user, db=self.session, pagination_params=Params(page=1, size=10))  # page=1, size=10
         # add_pagination(contacts)
-        self.assertEqual(result, paginate(contacts, RawParams(offset=1, limit=10)))
 
+        input(f'\n{result=}\n')
+        self.assertEqual(result, paginate(contacts, Params(page=1, size=10)))  # offset=1, limit=10
+        
+        
+        # self.assertIs(result, paginate(contacts, Params(page=1, size=10)))
     
     async def test_get_contact_found(self):
         contact = Contact(
