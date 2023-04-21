@@ -43,7 +43,7 @@ class TestContacts(unittest.IsolatedAsyncioTestCase):
         PAGE = 1
         SIZE = 10
         contacts = [Contact(id=i+1, email=EmailStr(f'Unknown{i+1}@mail.com')) for i in range(TEST_RANGE)]
-        self.session.query.return_value.filter.return_value.order_by.return_value.count.return_value = 10
+        self.session.query.return_value.filter.return_value.order_by.return_value.count.return_value = SIZE
         self.session.query().filter().order_by().limit().offset().all.return_value = contacts
         result = await get_contacts(user=self.user, db=self.session, pagination_params=Params(page=PAGE, size=SIZE))
         self.assertIsInstance(result, Page)
@@ -218,28 +218,174 @@ class TestContacts(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(result, contact)
 
     async def test_search_by_fields_or_found(self):
-        pass
+        query_str = 'nown1'
+        TEST_RANGE = 12
+        PAGE = 1
+        SIZE = 10
+
+        def part_string_in_dictionary_values(query_str: str, current_dict: dict):
+            return [query_str for el in current_dict.values() if query_str in str(el)]
+
+        contacts = [Contact(id=i+1, email=EmailStr(f'Unknown{i+1}@mail.com')) for i in range(TEST_RANGE)]
+        self.session.query.return_value.filter.return_value.filter.return_value.count.return_value = SIZE
+        sample = [contact for contact in contacts if part_string_in_dictionary_values(query_str, contact.__dict__)]
+        self.session.query().filter().filter().limit().offset().all.return_value = sample
+        result = await search_by_fields_or(
+                                           query_str=query_str, 
+                                           user=self.user, 
+                                           db=self.session,
+                                           pagination_params=Params(page=PAGE, size=SIZE)
+                                           )
+        self.assertIsInstance(result, Page)
+        self.assertEqual(result.page, PAGE)
+        self.assertEqual(result.total, SIZE)
+        self.assertEqual(len(result.items), 4)  # 10? TEST_RANGE // 10 + 1 be cause "query_str = 'nown1'"
 
     async def test_search_by_fields_or_not_found(self):
-        pass
+        query_str = 'nown1'
+        PAGE = 1
+        SIZE = 10
+        self.session.query.return_value.filter.return_value.filter.return_value.count.return_value = SIZE
+        self.session.query().filter().filter().limit().offset().all.return_value = []
+        result = await search_by_fields_or(
+                                           query_str=query_str, 
+                                           user=self.user, 
+                                           db=self.session,
+                                           pagination_params=Params(page=PAGE, size=SIZE)
+                                           )
+        self.assertIsInstance(result, Page)
+        self.assertEqual(result.page, PAGE)
+        self.assertEqual(result.total, SIZE)
+        self.assertEqual(result.items, [])
 
     async def test_search_by_like_fields_or_found(self):
-        pass
+        query_str = 'nown1'
+        TEST_RANGE = 12
+        PAGE = 1
+        SIZE = 10
 
-    async def test_search_by_like_fields_or_not_found(self):
-        pass
+        def part_string_in_dictionary_values(query_str: str, current_dict: dict):
+            return [query_str for el in current_dict.values() if query_str in str(el)]
+
+        contacts = [Contact(id=i+1, name=f'nown1{i}', email=EmailStr(f'Unknown{i+1}@mail.com')) 
+                        for i in range(TEST_RANGE)]
+        self.session.query.return_value.filter.return_value.filter.return_value.count.return_value = SIZE
+        sample = [contact for contact in contacts if part_string_in_dictionary_values(query_str, contact.__dict__)]
+        self.session.query().filter().filter().limit().offset().all.return_value = sample
+        result = await search_by_like_fields_or(
+                                                query_str=query_str, 
+                                                user=self.user, 
+                                                db=self.session,
+                                                pagination_params=Params(page=PAGE, size=SIZE)
+                                                )
+        self.assertIsInstance(result, Page)
+        self.assertEqual(result.page, PAGE)
+        self.assertEqual(result.total, SIZE)
+        self.assertEqual(len(result.items), TEST_RANGE)
+
+    async def test_search_by_like_fields_or_not_found(self):  
+        query_str = 'nown1'
+        PAGE = 1
+        SIZE = 10
+        self.session.query.return_value.filter.return_value.filter.return_value.count.return_value = SIZE
+        self.session.query().filter().filter().limit().offset().all.return_value = []
+        result = await search_by_like_fields_or(
+                                                query_str=query_str, 
+                                                user=self.user, 
+                                                db=self.session,
+                                                pagination_params=Params(page=PAGE, size=SIZE)
+                                                )
+        self.assertIsInstance(result, Page)
+        self.assertEqual(result.page, PAGE)
+        self.assertEqual(result.total, SIZE)
+        self.assertEqual(result.items, [])
+
 
     async def test_search_by_like_fields_and_found(self):
-        pass
+        name = 'Name'
+        email = 'New_email@mail.com'
+        TEST_RANGE = 12
+        PAGE = 1
+        SIZE = 10
+        contacts = [Contact(id=i+1, name=f'nown1{i}', email=EmailStr(f'Unknown{i+1}@mail.com')) 
+                        for i in range(TEST_RANGE)]
+        self.session.query.return_value.filter.return_value.filter.return_value.filter.return_value.count.return_value = SIZE
+        self.session.query().filter().filter().filter().limit().offset().all.return_value = contacts
+        result = await search_by_like_fields_and(
+                                                 part_name=name, 
+                                                 part_last_name=None, 
+                                                 part_email=email, 
+                                                 part_phone=None, 
+                                                 user=self.user, 
+                                                 db=self.session,
+                                                 pagination_params=Params(page=PAGE, size=SIZE)
+                                                 )
+        self.assertIsInstance(result, Page)
+        self.assertEqual(result.page, PAGE)
+        self.assertEqual(result.total, SIZE)
+        self.assertEqual(len(result.items), TEST_RANGE)
 
     async def test_search_by_like_fields_and_not_found(self):
-        pass
+        name = 'Name'
+        last_name = 'Last_name'
+        email = 'Email_email@com.com'
+        phone = 123
+        PAGE = 1
+        SIZE = 10
+        self.session.query().filter().filter().filter().filter().filter().count.return_value = SIZE
+        self.session.query().filter().filter().filter().filter().filter().limit().offset().all.return_value = []
+        result = await search_by_like_fields_and(
+                                                 part_name=name, 
+                                                 part_last_name=last_name, 
+                                                 part_email=email, 
+                                                 part_phone=phone, 
+                                                 user=self.user, 
+                                                 db=self.session,
+                                                 pagination_params=Params(page=PAGE, size=SIZE)
+                                                 )
+        self.assertIsInstance(result, Page)
+        self.assertEqual(result.page, PAGE)
+        self.assertEqual(result.total, SIZE)
+        self.assertEqual(result.items, [])
+
 
     async def test_search_by_birthday_celebration_within_days_found(self):
-        pass
+        meantime = 8
+        TEST_RANGE = 12
+        PAGE = 1
+        SIZE = 10
+        contacts = [Contact(id=i+1, birthday=date.today(), email=EmailStr(f'Unknown{i+1}@mail.com')) 
+                        for i in range(TEST_RANGE)]
+        self.session.query.return_value.filter.return_value.filter.return_value.count.return_value = SIZE
+        self.session.query().filter().filter().limit().offset().all.return_value = contacts
+        result = await search_by_birthday_celebration_within_days(
+                                                                  meantime=meantime,
+                                                                  user=self.user, 
+                                                                  db=self.session,
+                                                                  pagination_params=Params(page=PAGE, size=SIZE)
+                                                                  )
+        self.assertIsInstance(result, Page)
+        self.assertEqual(result.page, PAGE)
+        self.assertEqual(result.total, SIZE)
+        self.assertEqual(len(result.items), TEST_RANGE)
 
     async def test_search_by_birthday_celebration_within_days_not_found(self):
-        pass
+        meantime = 8
+        TEST_RANGE = 12
+        PAGE = 1
+        SIZE = 10
+        self.session.query.return_value.filter.return_value.filter.return_value.count.return_value = SIZE
+        self.session.query().filter().filter().limit().offset().all.return_value = []
+        result = await search_by_birthday_celebration_within_days(
+                                                                  meantime=meantime,
+                                                                  user=self.user, 
+                                                                  db=self.session,
+                                                                  pagination_params=Params(page=PAGE, size=SIZE)
+                                                                  )
+        self.assertIsInstance(result, Page)
+        self.assertEqual(result.page, PAGE)
+        self.assertEqual(result.total, SIZE)
+        self.assertEqual(result.items, [])
 
 
 if __name__ == '__main__':

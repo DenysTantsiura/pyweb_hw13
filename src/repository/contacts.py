@@ -23,8 +23,8 @@ async def get_contacts(
 
     :param user: User: Identify the user who is making the request
     :param db: Session: Access the database
+    :pagination_params: Params: Parameters for pagination, page(int), size(int) in Params object
     :return: Page: A page object
-    :doc-author: Trelent
     """
     return paginate(
                     query=db.query(Contact)
@@ -224,7 +224,8 @@ async def search_by_fields_and(
 async def search_by_fields_or(
                               query_str: str,
                               user: User,
-                              db: Session
+                              db: Session,
+                              pagination_params: Params
                               ) -> Page:
     """
     The search_by_fields_or function searches for contacts by name, last_name, email or phone.
@@ -233,8 +234,8 @@ async def search_by_fields_or(
     :param query_str: str: Search for a contact by name, last_name, email or phone
     :param user: User: Filter the contacts by user
     :param db: Session: Pass the database session to the function
+    :pagination_params: Params: Parameters for pagination, page(int), size(int) in Params object
     :return: Page: A page object with the results of the query
-    :doc-author: Trelent
     """
     return paginate(
                     db.query(Contact)
@@ -246,7 +247,8 @@ async def search_by_fields_or(
                                 Contact.email == query_str,
                                 cast(Contact.phone, String) == query_str   # !?,
                                 )
-                            )
+                            ),
+                    params=pagination_params
                     )
 
 
@@ -255,7 +257,8 @@ async def search_by_fields_or(
 async def search_by_like_fields_or(
                                    query_str: str,
                                    user: User,
-                                   db: Session
+                                   db: Session,
+                                   pagination_params: Params
                                    ) -> Page:
     """
     The search_by_like_fields_or function searches for contacts by name, last_name, email or phone.
@@ -264,8 +267,8 @@ async def search_by_like_fields_or(
     :param query_str: str: Filter the results by a string
     :param user: User: Get the user id from the token
     :param db: Session: Access the database
+    :pagination_params: Params: Parameters for pagination, page(int), size(int) in Params object
     :return: Page: A page of contacts that match the search criteria
-    :doc-author: Trelent
     """
     return paginate(
                     db.query(Contact)
@@ -277,7 +280,8 @@ async def search_by_like_fields_or(
                                 Contact.email.icontains(query_str),
                                 cast(Contact.phone, String).icontains(str(query_str))
                                 )
-                            )
+                            ),
+                    params=pagination_params
                     )
 
 
@@ -288,7 +292,8 @@ async def search_by_like_fields_and(
                                     part_email: str | None,
                                     part_phone: int | None,
                                     user: User,
-                                    db: Session
+                                    db: Session,
+                                    pagination_params: Params
                                     ) -> Page:
     """
     The search_by_like_fields_and function searches for contacts by the given fields.
@@ -301,8 +306,8 @@ async def search_by_like_fields_and(
     :param part_phone: int | None: Search by phone number
     :param user: User: Check if the user is logged in
     :param db: Session: Access the database
+    :pagination_params: Params: Parameters for pagination, page(int), size(int) in Params object
     :return: Page: A page object
-    :doc-author: Trelent
     """
     if not part_name and not part_last_name and not part_email and not part_phone:
         return None
@@ -317,14 +322,15 @@ async def search_by_like_fields_and(
     if part_phone:
         result = result.filter(cast(Contact.phone, String).icontains(str(part_phone)))
     
-    return paginate(result)
+    return paginate(result, params=pagination_params)
 
 
 # ------- search_by_birthday... --------------------------------------------
 async def search_by_birthday_celebration_within_days(
                                                      meantime: int,   
                                                      user: User,
-                                                     db: Session
+                                                     db: Session,
+                                                     pagination_params: Params
                                                      ) -> Page:
     """
     The search_by_birthday_celebration_within_days function searches for contacts whose birthday is within a given
@@ -333,8 +339,8 @@ async def search_by_birthday_celebration_within_days(
     :param meantime: int: Get the number of days in which we want to search for birthdays
     :param user: User: Get the user_id from the user object
     :param db: Session: Pass the database session to the function
+    :pagination_params: Params: Parameters for pagination, page(int), size(int) in Params object
     :return: Page: A paginated list of contacts with birthdays within the given number of days
-    :doc-author: Trelent
     """
     today = date.today()
     days_limit = date.today() + timedelta(meantime)
@@ -343,6 +349,9 @@ async def search_by_birthday_celebration_within_days(
     return paginate(
                     db.query(Contact)
                     .filter(Contact.user_id == user.id)
-                    .filter(func.to_char(Contact.birthday, f'{slide}MM-DD') >= today.strftime(f'0%m-%d'),
-                            func.to_char(Contact.birthday, '0MM-DD') <= days_limit.strftime(f'{slide}%m-%d'))
+                    .filter(
+                            func.to_char(Contact.birthday, f'{slide}MM-DD') >= today.strftime(f'0%m-%d'),
+                            func.to_char(Contact.birthday, '0MM-DD') <= days_limit.strftime(f'{slide}%m-%d')
+                            ),
+                    params=pagination_params
                     )

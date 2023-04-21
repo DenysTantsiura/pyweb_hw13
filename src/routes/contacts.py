@@ -35,8 +35,8 @@ async def get_contacts(
 
     :param db: Session: Pass the database session to the function
     :param current_user: User: Get the user id from the database
+    :pagination_params: Params: Parameters for pagination, page(int), size(int) in Params object
     :return: A list of contacts
-    :doc-author: Trelent
     """
     contacts = await repository_contacts.get_contacts(current_user, db, pagination_params)
 
@@ -194,7 +194,8 @@ async def change_name_contact(
 async def search_by_birthday_celebration_within_days(
                                                      days: int,
                                                      db: Session = Depends(get_db),
-                                                     current_user: User = Depends(auth_service.get_current_user)
+                                                     current_user: User = Depends(auth_service.get_current_user),
+                                                     pagination_params: Params = Depends()
                                                      ) -> Page:
     """
     The search_by_birthday_celebration_within_days function searches for contacts that have a birthday celebration
@@ -203,10 +204,15 @@ async def search_by_birthday_celebration_within_days(
     :param days: int: Determine the number of days within which a contact's birthday is to be celebrated
     :param db: Session: Get the database session
     :param current_user: User: Get the current user from the auth_service
+    :pagination_params: Params: Parameters for pagination, page(int), size(int) in Params object
     :return: A list of contacts that have birthdays within the next
-    :doc-author: Trelent
     """
-    contact = await repository_contacts.search_by_birthday_celebration_within_days(days, current_user, db)
+    contact = await repository_contacts.search_by_birthday_celebration_within_days(
+                                                                                   days, 
+                                                                                   current_user, 
+                                                                                   db, 
+                                                                                   pagination_params
+                                                                                   )
     if contact is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='Contact Not Found')
     
@@ -260,7 +266,8 @@ async def search_by_fields_and(
 async def search_by_fields_or(
                               query_str: str,
                               db: Session = Depends(get_db),
-                              current_user: User = Depends(auth_service.get_current_user)
+                              current_user: User = Depends(auth_service.get_current_user),
+                              pagination_params: Params = Depends()
                               ) -> Page:
     """
     The search_by_fields_or function searches for contacts by a query string.
@@ -270,10 +277,10 @@ async def search_by_fields_or(
     :param query_str: str: Search for a contact by name, email or phone number
     :param db: Session: Create a connection to the database
     :param current_user: User: Get the current user
+    :pagination_params: Params: Parameters for pagination, page(int), size(int) in Params object
     :return: A list of contacts
-    :doc-author: Trelent
     """
-    contact = await repository_contacts.search_by_fields_or(query_str, current_user, db)
+    contact = await repository_contacts.search_by_fields_or(query_str, current_user, db, pagination_params)
     if contact is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='Contact Not Found')
     
@@ -289,7 +296,8 @@ async def search_by_fields_or(
 async def search_by_like_fields_or(
                                    query_str: str,
                                    db: Session = Depends(get_db),
-                                   current_user: User = Depends(auth_service.get_current_user)
+                                   current_user: User = Depends(auth_service.get_current_user),
+                                   pagination_params: Params = Depends()
                                    ) -> Page:
     """
     The search_by_like_fields_or function searches for contacts by a query string.
@@ -299,10 +307,10 @@ async def search_by_like_fields_or(
     :param query_str: str: Search for a contact by first name, last name, or email
     :param db: Session: Access the database
     :param current_user: User: Get the user's id
+    :pagination_params: Params: Parameters for pagination, page(int), size(int) in Params object
     :return: A page object
-    :doc-author: Trelent
     """
-    contact = await repository_contacts.search_by_like_fields_or(query_str, current_user, db)
+    contact = await repository_contacts.search_by_like_fields_or(query_str, current_user, db, pagination_params)
     if contact is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='Contact Not Found')
     
@@ -321,7 +329,8 @@ async def search_by_like_fields_and(
                                     email: str | None = None,
                                     phone: int | None = None,
                                     db: Session = Depends(get_db),
-                                    current_user: User = Depends(auth_service.get_current_user)
+                                    current_user: User = Depends(auth_service.get_current_user),
+                                    pagination_params: Params = Depends()
                                     ) -> Page:
     """
     The search_by_like_fields_and function searches for a contact by name, last_name, email or phone.
@@ -333,10 +342,18 @@ async def search_by_like_fields_and(
     :param phone: int | None: Filter the contacts by phone
     :param db: Session: Get the database session from the dependency injection
     :param current_user: User: Get the current user from the database
+    :pagination_params: Params: Parameters for pagination, page(int), size(int) in Params object
     :return: A list of contacts
-    :doc-author: Trelent
     """
-    contact = await repository_contacts.search_by_like_fields_and(name, last_name, email, phone, current_user, db=db)
+    contact = await repository_contacts.search_by_like_fields_and(
+                                                                  name, 
+                                                                  last_name, 
+                                                                  email, 
+                                                                  phone, 
+                                                                  current_user, 
+                                                                  db, 
+                                                                  pagination_params
+                                                                  )
     if contact is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='Contact Not Found')
     
