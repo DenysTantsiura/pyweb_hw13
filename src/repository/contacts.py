@@ -4,13 +4,12 @@ from typing import Optional
 from fastapi import HTTPException, status
 from fastapi.encoders import jsonable_encoder
 from fastapi_pagination import Page, Params
-from fastapi_pagination.bases import AbstractPage, AbstractParams, RawParams
 from fastapi_pagination.ext.sqlalchemy import paginate
 from sqlalchemy import cast, func, or_, String
 from sqlalchemy.orm import Session
 
 from src.database.models import Contact, User
-from src.schemes import ContactModel, CatToNameModel, ContactResponse
+from src.schemes import ContactModel, CatToNameModel
 
 
 async def get_contacts(

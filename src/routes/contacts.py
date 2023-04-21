@@ -3,8 +3,6 @@ from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, status, Path
 from fastapi_limiter.depends import RateLimiter
 from fastapi_pagination import add_pagination, Page, Params
-from fastapi_pagination.bases import AbstractPage, RawParams
-from fastapi_pagination.ext.sqlalchemy import paginate
 from sqlalchemy.orm import Session
 
 from src.database.db_connect import get_db
@@ -23,7 +21,7 @@ router = APIRouter(prefix='/contacts')  # tags=['contacts']
             '/', 
             description=f'No more than {settings.limit_crit} requests per minute',
             dependencies=[Depends(RateLimiter(times=settings.limit_crit, seconds=60))],  # , pagination_params = PaginationParams(page=1, page_size=10)],
-            response_model=AbstractPage, tags=['all_contacts']
+            response_model=Page, tags=['all_contacts']
             )
 async def get_contacts(
                        db: Session = Depends(get_db), 
