@@ -121,7 +121,8 @@ async def confirmed_email(
                           ) -> dict:
     """
     The confirmed_email function is used to confirm the user's email.
-        The function takes a token as an argument and returns a message that the email has been confirmed or that it was already confirmed.
+        The function takes a token as an argument and returns a message that the email has been confirmed or
+        that it was already confirmed.
 
 
     :param token: str: Get the token from the url

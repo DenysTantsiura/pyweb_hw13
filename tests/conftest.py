@@ -64,5 +64,5 @@ def user():
             'created_at': f'{date.today()}',
             'avatar': '',
             'refresh_token': 'token1',
-            'confirmed': 'false', # False str?
+            'confirmed': 'false',
             }

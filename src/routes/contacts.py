@@ -20,12 +20,12 @@ router = APIRouter(prefix='/contacts')  # tags=['contacts']
 @router.get(
             '/', 
             description=f'No more than {settings.limit_crit} requests per minute',
-            dependencies=[Depends(RateLimiter(times=settings.limit_crit, seconds=60))],  # , pagination_params = PaginationParams(page=1, page_size=10)],
+            dependencies=[Depends(RateLimiter(times=settings.limit_crit, seconds=60))],
             response_model=Page, tags=['all_contacts']
             )
 async def get_contacts(
                        db: Session = Depends(get_db), 
-                       current_user: User = Depends(auth_service.get_current_user),  # pagination_params: Page = Depends()
+                       current_user: User = Depends(auth_service.get_current_user),
                        pagination_params: Params = Depends()
                        ) -> Page:
     """
@@ -33,7 +33,7 @@ async def get_contacts(
 
     :param db: Session: Pass the database session to the function
     :param current_user: User: Get the user id from the database
-    :pagination_params: Params: Parameters for pagination, page(int), size(int) in Params object
+    :param pagination_params: Params: Parameters for pagination, page(int), size(int) in Params object
     :return: A list of contacts
     """
     contacts = await repository_contacts.get_contacts(current_user, db, pagination_params)
@@ -202,7 +202,7 @@ async def search_by_birthday_celebration_within_days(
     :param days: int: Determine the number of days within which a contact's birthday is to be celebrated
     :param db: Session: Get the database session
     :param current_user: User: Get the current user from the auth_service
-    :pagination_params: Params: Parameters for pagination, page(int), size(int) in Params object
+    :param pagination_params: Params: Parameters for pagination, page(int), size(int) in Params object
     :return: A list of contacts that have birthdays within the next
     """
     contact = await repository_contacts.search_by_birthday_celebration_within_days(
@@ -275,7 +275,7 @@ async def search_by_fields_or(
     :param query_str: str: Search for a contact by name, email or phone number
     :param db: Session: Create a connection to the database
     :param current_user: User: Get the current user
-    :pagination_params: Params: Parameters for pagination, page(int), size(int) in Params object
+    :param pagination_params: Params: Parameters for pagination, page(int), size(int) in Params object
     :return: A list of contacts
     """
     contact = await repository_contacts.search_by_fields_or(query_str, current_user, db, pagination_params)
@@ -305,7 +305,7 @@ async def search_by_like_fields_or(
     :param query_str: str: Search for a contact by first name, last name, or email
     :param db: Session: Access the database
     :param current_user: User: Get the user's id
-    :pagination_params: Params: Parameters for pagination, page(int), size(int) in Params object
+    :param pagination_params: Params: Parameters for pagination, page(int), size(int) in Params object
     :return: A page object
     """
     contact = await repository_contacts.search_by_like_fields_or(query_str, current_user, db, pagination_params)
@@ -340,7 +340,7 @@ async def search_by_like_fields_and(
     :param phone: int | None: Filter the contacts by phone
     :param db: Session: Get the database session from the dependency injection
     :param current_user: User: Get the current user from the database
-    :pagination_params: Params: Parameters for pagination, page(int), size(int) in Params object
+    :param pagination_params: Params: Parameters for pagination, page(int), size(int) in Params object
     :return: A list of contacts
     """
     contact = await repository_contacts.search_by_like_fields_and(

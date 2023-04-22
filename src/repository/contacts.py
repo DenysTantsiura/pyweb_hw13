@@ -22,7 +22,7 @@ async def get_contacts(
 
     :param user: User: Identify the user who is making the request
     :param db: Session: Access the database
-    :pagination_params: Params: Parameters for pagination, page(int), size(int) in Params object
+    :param pagination_params: Params: Parameters for pagination, page(int), size(int) in Params object
     :return: Page: A page object
     """
     return paginate(
@@ -233,7 +233,7 @@ async def search_by_fields_or(
     :param query_str: str: Search for a contact by name, last_name, email or phone
     :param user: User: Filter the contacts by user
     :param db: Session: Pass the database session to the function
-    :pagination_params: Params: Parameters for pagination, page(int), size(int) in Params object
+    :param pagination_params: Params: Parameters for pagination, page(int), size(int) in Params object
     :return: Page: A page object with the results of the query
     """
     return paginate(
@@ -266,7 +266,7 @@ async def search_by_like_fields_or(
     :param query_str: str: Filter the results by a string
     :param user: User: Get the user id from the token
     :param db: Session: Access the database
-    :pagination_params: Params: Parameters for pagination, page(int), size(int) in Params object
+    :param pagination_params: Params: Parameters for pagination, page(int), size(int) in Params object
     :return: Page: A page of contacts that match the search criteria
     """
     return paginate(
@@ -305,7 +305,7 @@ async def search_by_like_fields_and(
     :param part_phone: int | None: Search by phone number
     :param user: User: Check if the user is logged in
     :param db: Session: Access the database
-    :pagination_params: Params: Parameters for pagination, page(int), size(int) in Params object
+    :param pagination_params: Params: Parameters for pagination, page(int), size(int) in Params object
     :return: Page: A page object
     """
     if not part_name and not part_last_name and not part_email and not part_phone:
@@ -338,7 +338,7 @@ async def search_by_birthday_celebration_within_days(
     :param meantime: int: Get the number of days in which we want to search for birthdays
     :param user: User: Get the user_id from the user object
     :param db: Session: Pass the database session to the function
-    :pagination_params: Params: Parameters for pagination, page(int), size(int) in Params object
+    :param pagination_params: Params: Parameters for pagination, page(int), size(int) in Params object
     :return: Page: A paginated list of contacts with birthdays within the given number of days
     """
     today = date.today()

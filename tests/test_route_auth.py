@@ -99,7 +99,13 @@ def test_confirmed_email_ok(client, session, user):
     current_user.confirmed = False
     session.commit()
 
-    email_token = auth_service.create_email_token(data={'sub': user['email'], 'email': user['email'], 'username': user['username']})
+    email_token = auth_service.create_email_token(
+                                                  data={
+                                                        'sub': user['email'],
+                                                        'email': user['email'],
+                                                        'username': user['username'],
+                                                         }
+                                                  )
     response = client.get(f'api/auth/confirmed_email/{email_token}')
 
     assert response.status_code == status.HTTP_200_OK
@@ -111,7 +117,13 @@ def test_confirmed_email_fail(client, session, user):  # split into several?
     current_user.confirmed = True
     session.commit()
 
-    email_token = auth_service.create_email_token(data={'sub': user['email'], 'email': user['email'], 'username': user['username']})
+    email_token = auth_service.create_email_token(
+                                                  data={
+                                                        'sub': user['email'],
+                                                        'email': user['email'],
+                                                        'username': user['username'],
+                                                        }
+                                                  )
     response = client.get(f'api/auth/confirmed_email/{email_token}')
 
     assert response.status_code == status.HTTP_200_OK
@@ -203,7 +215,7 @@ def test_reset_password_confirm_ok(client, session, user, monkeypatch):
 
     token = auth_service.create_email_token(data={'sub': user['email']})
 
-    response = client.post(f'api/auth/reset-password/confirm/{token}', json={'password': user['password']})  # data=  json= , headers=headers
+    response = client.post(f'api/auth/reset-password/confirm/{token}', json={'password': user['password']})
  
     assert response.status_code == status.HTTP_200_OK
     assert 'user' in response.json()  # response.content  # context

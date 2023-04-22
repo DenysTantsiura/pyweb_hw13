@@ -9,18 +9,18 @@ from sqlalchemy.orm import Session
 
 from src.database.models import Contact, User
 from src.repository.contacts import (
-    get_contacts,
-    get_contact,
-    create_contact,
-    update_contact,
-    remove_contact,
-    change_name_contact,
-    search_by_fields_and,
-    search_by_fields_or,
-    search_by_like_fields_or,
-    search_by_like_fields_and,
-    search_by_birthday_celebration_within_days,
-    )
+                                    get_contacts,
+                                    get_contact,
+                                    create_contact,
+                                    update_contact,
+                                    remove_contact,
+                                    change_name_contact,
+                                    search_by_fields_and,
+                                    search_by_fields_or,
+                                    search_by_like_fields_or,
+                                    search_by_like_fields_and,
+                                    search_by_birthday_celebration_within_days,
+                                    )
 from src.schemes import ContactModel, CatToNameModel
 
 
@@ -82,7 +82,11 @@ class TestContacts(unittest.IsolatedAsyncioTestCase):
     async def test_get_contacts(self):
         self.session.query.return_value.filter.return_value.order_by.return_value.count.return_value = TestContacts.SIZE
         self.session.query().filter().order_by().limit().offset().all.return_value = TestContacts.contacts
-        result = await get_contacts(user=self.user, db=self.session, pagination_params=Params(page=TestContacts.PAGE, size=TestContacts.SIZE))
+        result = await get_contacts(
+                                    user=self.user,
+                                    db=self.session,
+                                    pagination_params=Params(page=TestContacts.PAGE, size=TestContacts.SIZE)
+                                    )
         self.assertIsInstance(result, Page)
         self.assertEqual(result.page, TestContacts.PAGE)
         self.assertEqual(result.total, TestContacts.SIZE)
@@ -94,7 +98,8 @@ class TestContacts(unittest.IsolatedAsyncioTestCase):
         result = await get_contact(contact_id=1, user=self.user, db=self.session)
         self.assertIsInstance(result, Contact)
         self.assertEqual(result, TestContacts.contact)
-        [self.assertEqual(result.__dict__[el], TestContacts.contact.__dict__[el]) for el in TestContacts.contact.__dict__]
+        [self.assertEqual(result.__dict__[el], TestContacts.contact.__dict__[el])
+            for el in TestContacts.contact.__dict__]
 
     async def test_get_contact_not_found(self):
         self.session.query().filter().filter_by().first.return_value = None
@@ -110,7 +115,7 @@ class TestContacts(unittest.IsolatedAsyncioTestCase):
     async def test_create_contact_dublicat(self):
         self.session.query().filter().filter_by().first.return_value = TestContacts.contact
         with self.assertRaises(HTTPException) as context:
-            result = await create_contact(body=TestContacts.body, user=self.user, db=self.session)
+            await create_contact(body=TestContacts.body, user=self.user, db=self.session)
         self.assertTrue(context.exception)
 
     async def test_remove_contact_found(self):
@@ -175,7 +180,9 @@ class TestContacts(unittest.IsolatedAsyncioTestCase):
 
     async def test_search_by_fields_or_found(self):
         self.session.query.return_value.filter.return_value.filter.return_value.count.return_value = TestContacts.SIZE
-        sample = [contact for contact in TestContacts.contacts if TestContacts.part_string_in_dictionary_values(TestContacts.query_str, contact.__dict__)]
+        sample = [contact
+                  for contact in TestContacts.contacts
+                  if TestContacts.part_string_in_dictionary_values(TestContacts.query_str, contact.__dict__)]
         self.session.query().filter().filter().limit().offset().all.return_value = sample
         result = await search_by_fields_or(
                                            query_str=TestContacts.query_str, 
@@ -186,7 +193,7 @@ class TestContacts(unittest.IsolatedAsyncioTestCase):
         self.assertIsInstance(result, Page)
         self.assertEqual(result.page, TestContacts.PAGE)
         self.assertEqual(result.total, TestContacts.SIZE)
-        self.assertEqual(len(result.items), 5)  # 10? TEST_RANGE // 10 + 1 be cause "query_str = 'nown1'"
+        self.assertEqual(len(result.items), 5)  # 10? TEST_RANGE // 10 + 1 because "query_str = 'nown1'"
 
     async def test_search_by_fields_or_not_found(self):
         self.session.query.return_value.filter.return_value.filter.return_value.count.return_value = TestContacts.SIZE
@@ -204,7 +211,9 @@ class TestContacts(unittest.IsolatedAsyncioTestCase):
 
     async def test_search_by_like_fields_or_found(self):
         self.session.query.return_value.filter.return_value.filter.return_value.count.return_value = TestContacts.SIZE
-        sample = [contact for contact in TestContacts.contacts if TestContacts.part_string_in_dictionary_values(TestContacts.query_str, contact.__dict__)]
+        sample = [contact
+                  for contact in TestContacts.contacts
+                  if TestContacts.part_string_in_dictionary_values(TestContacts.query_str, contact.__dict__)]
         self.session.query().filter().filter().limit().offset().all.return_value = sample
         result = await search_by_like_fields_or(
                                                 query_str=TestContacts.query_str, 
@@ -231,9 +240,8 @@ class TestContacts(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(result.total, TestContacts.SIZE)
         self.assertEqual(result.items, [])
 
-
     async def test_search_by_like_fields_and_found(self):
-        self.session.query.return_value.filter.return_value.filter.return_value.filter.return_value.count.return_value = TestContacts.SIZE
+        self.session.query().filter().filter().filter().count.return_value = TestContacts.SIZE
         self.session.query().filter().filter().filter().limit().offset().all.return_value = TestContacts.contacts
         result = await search_by_like_fields_and(
                                                  part_name=TestContacts.name, 
@@ -242,7 +250,10 @@ class TestContacts(unittest.IsolatedAsyncioTestCase):
                                                  part_phone=None, 
                                                  user=self.user, 
                                                  db=self.session,
-                                                 pagination_params=Params(page=TestContacts.PAGE, size=TestContacts.SIZE)
+                                                 pagination_params=Params(
+                                                                          page=TestContacts.PAGE,
+                                                                          size=TestContacts.SIZE
+                                                                          )
                                                  )
         self.assertIsInstance(result, Page)
         self.assertEqual(result.page, TestContacts.PAGE)
@@ -259,13 +270,15 @@ class TestContacts(unittest.IsolatedAsyncioTestCase):
                                                  part_phone=TestContacts.phone, 
                                                  user=self.user, 
                                                  db=self.session,
-                                                 pagination_params=Params(page=TestContacts.PAGE, size=TestContacts.SIZE)
+                                                 pagination_params=Params(
+                                                                          page=TestContacts.PAGE,
+                                                                          size=TestContacts.SIZE
+                                                                          )
                                                  )
         self.assertIsInstance(result, Page)
         self.assertEqual(result.page, TestContacts.PAGE)
         self.assertEqual(result.total, TestContacts.SIZE)
         self.assertEqual(result.items, [])
-
 
     async def test_search_by_birthday_celebration_within_days_found(self):
         self.session.query.return_value.filter.return_value.filter.return_value.count.return_value = TestContacts.SIZE
@@ -274,7 +287,10 @@ class TestContacts(unittest.IsolatedAsyncioTestCase):
                                                                   meantime=TestContacts.meantime,
                                                                   user=self.user, 
                                                                   db=self.session,
-                                                                  pagination_params=Params(page=TestContacts.PAGE, size=TestContacts.SIZE)
+                                                                  pagination_params=Params(
+                                                                                           page=TestContacts.PAGE,
+                                                                                           size=TestContacts.SIZE
+                                                                                           )
                                                                   )
         self.assertIsInstance(result, Page)
         self.assertEqual(result.page, TestContacts.PAGE)
@@ -288,7 +304,10 @@ class TestContacts(unittest.IsolatedAsyncioTestCase):
                                                                   meantime=TestContacts.meantime,
                                                                   user=self.user, 
                                                                   db=self.session,
-                                                                  pagination_params=Params(page=TestContacts.PAGE, size=TestContacts.SIZE)
+                                                                  pagination_params=Params(
+                                                                                           page=TestContacts.PAGE,
+                                                                                           size=TestContacts.SIZE
+                                                                                           )
                                                                   )
         self.assertIsInstance(result, Page)
         self.assertEqual(result.page, TestContacts.PAGE)
