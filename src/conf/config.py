@@ -2,6 +2,7 @@ from pydantic import BaseSettings
 
 
 class Settings(BaseSettings):
+    """Class for settings."""
     sqlalchemy_database_url: str
     secret_key: str
     algorithm: str
@@ -25,10 +26,9 @@ class Settings(BaseSettings):
     cloudinary_api_secret: str
 
     class Config:
-        """Задає розташування файлу середовища .env та його кодування utf-8. 
-        Це дасть змогу прочитати вміст файлу .env і присвоїти відповідній змінній 
-        своє значення. Як бачимо, регістр значення не має.
-        """
+        """Specifies the location of the .env environment file and its utf-8 encoding. This will allow you to read
+        the contents of the .env file and assign its value to the corresponding variable. As you can see,
+        case does not matter."""
         env_file = ".env"
         env_file_encoding = "utf-8"
 

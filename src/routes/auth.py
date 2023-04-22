@@ -2,8 +2,10 @@ from fastapi import APIRouter, HTTPException, Depends, status, Security, Backgro
 from fastapi.responses import HTMLResponse
 from fastapi.security import OAuth2PasswordRequestForm, HTTPAuthorizationCredentials, HTTPBearer
 from fastapi.templating import Jinja2Templates
+from starlette.templating import _TemplateResponse
 from sqlalchemy.orm import Session
 
+from src.conf import messages as m
 from src.database.db_connect import get_db
 from src.repository import users as repository_users
 from src.schemes import (
@@ -30,47 +32,50 @@ async def signup(
                  request: Request, 
                  db: Session = Depends(get_db)
                  ) -> dict:
-    """обробляє операцію POST. Вона створює нового користувача, якщо користувача з такою електронною поштою не існує.
-     Не може бути в системі два користувача з однаковим email. Якщо користувач з таким email вже існує в базі даних, 
-     функція викликає виняток HTTPException з кодом стану 409 Conflict та подробицями detail='Account already exists'.
-     """
+    """
+    The signup function creates a new user in the database.
+
+    :param body: UserModel: Get the user data from the request body
+    :param background_tasks: BackgroundTasks: Add a background task to the list of tasks
+    :param request: Request: Access the request object
+    :param db: Session: Pass the database session to the function
+    :return: A dictionary with two keys: user and detail
+    :doc-author: Trelent
+    """
     exist_user = await repository_users.get_user_by_email(body.email, db)
     if exist_user:
-        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail='Account already exists')
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=m.ACCOUNT_EXIST)
     
     body.password = auth_service.get_password_hash(body.password)
     new_user = await repository_users.create_user(body, db)
-    # Створюємо фонове завдання надсилання листа:
+    # We create a background task of sending a letter:
     background_tasks.add_task(send_email, new_user.email, new_user.username, request.base_url)
-    # параметр request.base_url. Це атрибут об’єкта запиту Request, який є базовим URL запиту. 
-    # Базовий URL включає схему (наприклад, http або https), ім’я хосту та порт, але не включає 
-    # шлях або рядок запиту. У нашому випадку повний URL запиту буде http://127.0.0.1:8000/api/auth/signup, 
-    # тоді request.base_url буде містити http://127.0.0.1:8000/. Цей атрибут ми використовуємо 
-    # для генерації URL у шаблоні електронної пошти.
 
     return {'user': new_user, 'detail': 'User successfully created'}
 
 
 @router.post('/login', response_model=TokenModel)
 async def login(
-                body: OAuth2PasswordRequestForm = Depends(),  # OAuth2PasswordRequestForm автоматом йде у Depends
+                body: OAuth2PasswordRequestForm = Depends(),  # OAuth2PasswordRequestForm automatically goes to Depends
                 db: Session = Depends(get_db)
                 ) -> dict:
-    """обробляє операцію POST. Вона витягує користувача з бази даних з його email, якщо такого користувача немає, 
-    то викликається виняток HTTPException з кодом стану 401 та подробицями detail='Invalid email'. 
-    Після цього виконується перевірка пароля на збіг, якщо паролі не ідентичні, то викликається виняток HTTPException 
-    з кодом стану 401 та подробицями detail='Invalid password'. Після всіх перевірок генерується пара 
-    токенів access_token та refresh_token, для відправлення клієнту. Також оновлюємо токен оновлення у 
-    базі даних для користувача."""
+    """
+    The login function is used to authenticate a user.
+
+    :param body: OAuth2PasswordRequestForm: Get the username and password from the request body
+    :param db: Session: Access the database
+    :return: A dict with the access_token, refresh_token and token_type
+    :doc-author: Trelent
+    """
     user = await repository_users.get_user_by_email(body.username, db)
     if user is None:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='Invalid email')
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=m.INCORRECT_MAIL)
     
     if not user.confirmed:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='Email not confirmed')
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=m.UNCOMFIRMED_EMAIL)
     
     if not auth_service.verify_password(body.password, user.password):
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='Invalid password')
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=m.INCORRECT_PASSWORD)
     
     # Generate JWT
     access_token = await auth_service.create_access_token(data={'sub': user.email})
@@ -85,16 +90,22 @@ async def refresh_token(
                         credentials: HTTPAuthorizationCredentials = Security(security), 
                         db: Session = Depends(get_db)
                         ) -> dict:
-    """обробляє операцію GET. Вона декодує токен оновлення refresh_token та витягує відповідного користувача з БД. 
-    Потім створює нові токени доступу та оновлення, і також оновлює refresh_token в базі даних для користувача. 
-    Якщо токен оновлення недійсний, то викликається виняток HTTPException з кодом стану 401 та подробицями 
-    detail='Invalid refresh token'."""
+    """
+    The refresh_token function is used to refresh the access token.
+        The function takes in a refresh token and returns an access token,
+        a new refresh token, and the type of authentication being used.
+
+    :param credentials: HTTPAuthorizationCredentials: Get the token from the header of the request
+    :param db: Session: Get the database session
+    :return: The access_token and refresh_token,
+    :doc-author: Trelent
+    """
     token = credentials.credentials
     email = await auth_service.decode_refresh_token(token)
     user = await repository_users.get_user_by_email(email, db)
     if user.refresh_token != token:
         await repository_users.update_token(user, None, db)
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='Invalid refresh token')
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=m.INCORRECT_REFRESH_TOKEN)
 
     access_token = await auth_service.create_access_token(data={'sub': email})
     refresh_token = await auth_service.create_refresh_token(data={'sub': email})
@@ -108,20 +119,28 @@ async def confirmed_email(
                           token: str, 
                           db: Session = Depends(get_db)
                           ) -> dict:
-    """новий маршрут /confirm email/{token} для реалізації підтвердження електронної пошти. 
-    Маршрут визначає операцію GET і приймає токен як параметр шляху.
+    """
+    The confirmed_email function is used to confirm the user's email.
+        The function takes a token as an argument and returns a message that the email has been confirmed or
+        that it was already confirmed.
+
+
+    :param token: str: Get the token from the url
+    :param db: Session: Pass the database session to the function
+    :return: A dict with a message
+    :doc-author: Trelent
     """
     email = await auth_service.get_email_from_token(token)
     user = await repository_users.get_user_by_email(email, db)
-    if user is None:  # Якщо користувача з отриманим email немає у DB, що вже підозріло, генеруємо 400 Bad request
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='Verification error')
+    if user is None:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=m.ERROR_VERIFICATION)
      
     if user.confirmed:
-        return {'message': 'Your email is already confirmed'}
+        return {'message': m.CONFIRMED_EMAIL_ALREADY}
     
     await repository_users.confirmed_email(email, db)
 
-    return {'message': 'Email confirmed'}
+    return {'message': m.CONFIRMED_EMAIL}
 
 
 @router.post('/request_email')
@@ -131,21 +150,25 @@ async def request_email(
                         request: Request,
                         db: Session = Depends(get_db)
                         ) -> dict:
-    """реалізує операцію POST для запиту повторної перевірки електронної пошти. Вона приймає тіло JSON з 
-    адресою електронної пошти. Тому потрібно визначити модель RequestEmail у файлі src/shemas.py"""
+    """
+    The request_email function is used to send a confirmation email to the user.
+
+    :param body: RequestEmail: Get the email from the request body
+    :param background_tasks: BackgroundTasks: Add a task to the background queue
+    :param request: Request: Get the base url of our application
+    :param db: Session: Get the database session
+    :return: A dictionary with a message
+    :doc-author: Trelent
+    """
     user = await repository_users.get_user_by_email(body.email, db)
 
-    if user.confirmed:
-        return {'message': 'Your email is already confirmed'}
-    
     if user:
+        if user.confirmed:
+            return {'message': m.CONFIRMED_EMAIL_ALREADY}
+
         background_tasks.add_task(send_email, user.email, user.username, request.base_url)
-    
-    #  листа надсилаємо, тільки якщо користувач існує в базі даних, 
-    # а відповідь про успішне надсилання даємо завжди. Це не помилка, 
-    # так ми страхуємося від випадку, якщо зловмисник вирішив перевірити, 
-    # чи існує в системі незавершена реєстрація для електронного листа
-    return {'message': 'Check your email for confirmation.'}
+
+    return {'message': m.WARNING_EMAIL}
 
 
 @router.post('/reset-password')
@@ -155,30 +178,48 @@ async def reset_password(
                          request: Request,
                          db: Session = Depends(get_db)
                          ) -> dict:
-    """реалізує операцію POST для відновлення паролю. Вона генерує відповідний токен 
-    і надсилає його на email користувача."""
+    """
+    The reset_password function is used to reset a user's password.
+        It takes in the email address of the user and sends an email with a link to reset their password.
+        The function returns a message indicating whether or not the request was successful.
+
+    :param body: RequestEmail: Get the email from the request body
+    :param background_tasks: BackgroundTasks: Add the task to the background tasks queue
+    :param request: Request: Get the base url of the application
+    :param db: Session: Access the database
+    :return: A message to the user
+    :doc-author: Trelent
+    """
     user = await repository_users.get_user_by_email(body.email, db)
-
-    if user and user.confirmed:
-        background_tasks.add_task(send_reset_password, user.email, user.username, request.base_url)
-
-        return {'message': 'Check your email for confirmation.'}
     
     if user:
-        return {'message': 'Your email address has not been verified yet.'}
+        if user.confirmed:
+            background_tasks.add_task(send_reset_password, user.email, user.username, request.base_url)
+
+            return {'message': m.WARNING_EMAIL}
+        
+        return {'message': m.WARNING_VERIFIED_EMAIL}
     
-    return {'message': 'Check if the email is entered correctly.'}
+    return {'message': m.WARNING_ATTENTION_EMAIL}
 
 
 # users/password_reset_done.html
 @router.get('/reset-password/done', response_class=HTMLResponse, description='Request password reset Page')  
-async def reset_password_done(request: Request) -> HTMLResponse:  # _TemplateResponse ?
-    """генерує сторінку повідомлення про успішність надсилання листа для скидання паролю."""
-    return templates.TemplateResponse('password_reset_done.html', {'request': request, 
-                                                                   'title': 'Password-change email has been sent'})
+async def reset_password_done(request: Request) -> _TemplateResponse:
+    """
+    The reset_password_done function is called when the user clicks on the link in their email.
+    It displays a message to let them know that an email has been sent with instructions for resetting
+    their password.
+
+    :param request: Request: Access the request object
+    :return: A template response object (HTMLResponse ? _TemplateResponse)
+    :doc-author: Trelent
+    """
+    return templates.TemplateResponse('password_reset_done.html', {'request': request,
+                                                                   'title': m.MSG_SENT_PASSWORD})
 
 
-@router.post('/reset-password/confirm/{token}')  # users/password_reset_confirm.html
+@router.post('/reset-password/confirm/{token}')
 async def reset_password_confirm(
                                  body: PasswordRecovery,
                                  background_tasks: BackgroundTasks, 
@@ -186,29 +227,55 @@ async def reset_password_confirm(
                                  token: str,
                                  db: Session = Depends(get_db)
                                  ) -> dict:
-    """реалізує підтвердження скидання паролю."""
+    """
+    The reset_password_confirm function is used to reset a user's password.
+        It takes the following parameters:
+            body (PasswordRecovery): The new password for the user.
+            background_tasks (BackgroundTasks): A BackgroundTasks object that allows us to add tasks to be run
+            in the background.
+            We will use this object to send an email notification when a user's
+            password has been changed successfully.
+            This parameter is automatically injected by FastAPI, so we don't need
+            to pass it explicitly when calling this function from our code or
+            tests later on.
+
+    :param body: PasswordRecovery: Get the password from the request body
+    :param background_tasks: BackgroundTasks: Create a background task
+    :param request: Request: Get the base url of the application
+    :param token: str: Get the token from the url
+    :param db: Session: Access the database
+    :return: The following json response:
+    :doc-author: Trelent
+    """
     email = await auth_service.get_email_from_token(token)
     exist_user = await repository_users.get_user_by_email(email, db)
     if not exist_user:
         raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-                            detail='Can`t find user by email from token.')
+                            detail=m.WARNING_INVALID_TOKEN)
     
     body.password = auth_service.get_password_hash(body.password)
     
     updated_user = await repository_users.change_password_for_user(exist_user, body.password, db)
     if updated_user is None:
         raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-                            detail='Can`t find user by email from token.')
+                            detail=m.WARNING_INVALID_TOKEN)
 
-    # Створюємо фонове завдання надсилання листа:     request.base_url ->  http://127.0.0.1:8000/
+    # request.base_url ->  http://127.0.0.1:8000/
     background_tasks.add_task(send_email, updated_user.email, updated_user.username, request.base_url)  
 
-    return {'user': updated_user, 'detail': 'User`s password successfully changed.'}
+    return {'user': updated_user, 'detail': m.MSG_PASSWORD_CHENGED}
 
 
 # users/password_reset_complete.html
 @router.get('/reset-password/complete', response_class=HTMLResponse, description='Complete password reset Page')  
-async def reset_password_complete(request: Request) -> HTMLResponse:  # _TemplateResponse ?
-    """генерує сторінку повідомлення про успішність скидання паролю."""
-    return templates.TemplateResponse('password_reset_complete.html', {'request': request, 
-                                                                       'title': 'Complete password reset'})
+async def reset_password_complete(request: Request) -> _TemplateResponse:
+    """
+    The reset_password_complete function is called when the user has successfully reset their password.
+    It renders a template that informs the user of this fact.
+
+    :param request: Request: Get the current request object
+    :return: A template response object (HTMLResponse ? _TemplateResponse)
+    :doc-author: Trelent
+    """
+    return templates.TemplateResponse('password_reset_complete.html', {'request': request,
+                                                                       'title': m.MSG_PASSWORD_RESET})

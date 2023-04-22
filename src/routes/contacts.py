@@ -2,7 +2,7 @@ from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, status, Path
 from fastapi_limiter.depends import RateLimiter
-from fastapi_pagination import Page, add_pagination
+from fastapi_pagination import add_pagination, Page, Params
 from sqlalchemy.orm import Session
 
 from src.database.db_connect import get_db
@@ -13,7 +13,6 @@ from src.services.auth import auth_service
 
 from src.conf.config import settings
 
-
 router = APIRouter(prefix='/contacts')  # tags=['contacts']
 
 
@@ -22,13 +21,22 @@ router = APIRouter(prefix='/contacts')  # tags=['contacts']
             '/', 
             description=f'No more than {settings.limit_crit} requests per minute',
             dependencies=[Depends(RateLimiter(times=settings.limit_crit, seconds=60))],
-            response_model=Page[ContactResponse], tags=['all_contacts']
+            response_model=Page, tags=['all_contacts']
             )
 async def get_contacts(
                        db: Session = Depends(get_db), 
-                       current_user: User = Depends(auth_service.get_current_user)
-                       ) -> Page[ContactResponse]:
-    contacts = await repository_contacts.get_contacts(current_user, db) 
+                       current_user: User = Depends(auth_service.get_current_user),
+                       pagination_params: Params = Depends()
+                       ) -> Page:
+    """
+    The get_contacts function returns a list of contacts for the current user.
+
+    :param db: Session: Pass the database session to the function
+    :param current_user: User: Get the user id from the database
+    :param pagination_params: Params: Parameters for pagination, page(int), size(int) in Params object
+    :return: A list of contacts
+    """
+    contacts = await repository_contacts.get_contacts(current_user, db, pagination_params)
 
     return contacts
 
@@ -44,6 +52,15 @@ async def get_contact(
                       db: Session = Depends(get_db),
                       current_user: User = Depends(auth_service.get_current_user)
                       ) -> Optional[Contact]:
+    """
+    The get_contact function returns a contact by its id.
+
+    :param contact_id: int: Specify the contact id that is passed in from the url
+    :param db: Session: Get a database session
+    :param current_user: User: Get the current user from the database
+    :return: A contact by id
+    :doc-author: Trelent
+    """
     contact = await repository_contacts.get_contact(contact_id, current_user, db)
     if contact is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='Contact Not Found')
@@ -63,7 +80,15 @@ async def create_contact(
                          db: Session = Depends(get_db),
                          current_user: User = Depends(auth_service.get_current_user)
                          ) -> Contact:
+    """
+    The create_contact function creates a new contact in the database.
 
+    :param body: ContactModel: Get the data from the request body
+    :param db: Session: Get the database session
+    :param current_user: User: Get the user_id of the logged in user
+    :return: A contact object
+    :doc-author: Trelent
+    """
     return await repository_contacts.create_contact(body, current_user, db)
 
 
@@ -79,6 +104,18 @@ async def update_contact(
                          db: Session = Depends(get_db),
                          current_user: User = Depends(auth_service.get_current_user)
                          ) -> Contact:  
+    """
+    The update_contact function updates a contact in the database.
+        The function takes an id, body and db as parameters.
+        It returns a Contact object if successful.
+
+    :param body: ContactModel: Receive the data from the request body
+    :param contact_id: int: Specify the contact that will be deleted
+    :param db: Session: Get the database session
+    :param current_user: User: Get the user's id
+    :return: The updated contact
+    :doc-author: Trelent
+    """
     contact = await repository_contacts.update_contact(contact_id, body, current_user, db)
     if contact is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='Contact Not Found')
@@ -97,6 +134,15 @@ async def remove_contact(
                          db: Session = Depends(get_db),
                          current_user: User = Depends(auth_service.get_current_user)
                          ) -> Optional[Contact]:
+    """
+    The remove_contact function removes a contact from the database.
+
+    :param contact_id: int: Specify the contact_id of the contact to be deleted
+    :param db: Session: Get the database session
+    :param current_user: User: Get the user who is making the request
+    :return: An optional contact
+    :doc-author: Trelent
+    """
     contact = await repository_contacts.remove_contact(contact_id, current_user, db)
     if contact is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='Contact Not Found')
@@ -116,6 +162,19 @@ async def change_name_contact(
                               db: Session = Depends(get_db),
                               current_user: User = Depends(auth_service.get_current_user)
                               ) -> Optional[Contact]:
+    """
+    The change_name_contact function changes the name of a contact.
+        Args:
+            body (CatToNameModel): The new name for the contact.
+            contact_id (int): The id of the contact to change.
+
+    :param body: CatToNameModel: Pass the new name of the contact
+    :param contact_id: int: Specify the id of the contact that will be updated
+    :param db: Session: Get the database session
+    :param current_user: User: Get the user id of the current logged in user
+    :return: A contact object
+    :doc-author: Trelent
+    """
     contact = await repository_contacts.change_name_contact(body, contact_id, current_user, db)
     if contact is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='Not Found')
@@ -128,14 +187,30 @@ async def change_name_contact(
             '/search_by_birthday_celebration_within_days/{days}', 
             description=f'No more than {settings.limit_warn} requests per minute',
             dependencies=[Depends(RateLimiter(times=settings.limit_warn, seconds=60))],
-            response_model=Page[ContactResponse], tags=['search']
+            response_model=Page, tags=['search']
             )
 async def search_by_birthday_celebration_within_days(
                                                      days: int,
                                                      db: Session = Depends(get_db),
-                                                     current_user: User = Depends(auth_service.get_current_user)
-                                                     ) -> Page[ContactResponse]:
-    contact = await repository_contacts.search_by_birthday_celebration_within_days(days, current_user, db)
+                                                     current_user: User = Depends(auth_service.get_current_user),
+                                                     pagination_params: Params = Depends()
+                                                     ) -> Page:
+    """
+    The search_by_birthday_celebration_within_days function searches for contacts that have a birthday celebration
+    within the specified number of days.
+
+    :param days: int: Determine the number of days within which a contact's birthday is to be celebrated
+    :param db: Session: Get the database session
+    :param current_user: User: Get the current user from the auth_service
+    :param pagination_params: Params: Parameters for pagination, page(int), size(int) in Params object
+    :return: A list of contacts that have birthdays within the next
+    """
+    contact = await repository_contacts.search_by_birthday_celebration_within_days(
+                                                                                   days, 
+                                                                                   current_user, 
+                                                                                   db, 
+                                                                                   pagination_params
+                                                                                   )
     if contact is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='Contact Not Found')
     
@@ -158,6 +233,20 @@ async def search_by_fields_and(
                                db: Session = Depends(get_db),
                                current_user: User = Depends(auth_service.get_current_user)
                                ) -> Optional[Contact]:
+    """
+    The search_by_fields_and function searches for a contact by name, last_name, email and phone.
+        If the contact is found it returns the contact object.
+        If no contacts are found it raises an HTTPException with status code 404 Not Found.
+
+    :param name: str | None: Pass the name of the contact to be searched
+    :param last_name: str | None: Search by last name
+    :param email: str | None: Search by email
+    :param phone: int | None: Search by phone number
+    :param db: Session: Get the database session, which is used to query the database
+    :param current_user: User: Get the user who is making the request
+    :return: A list of contacts
+    :doc-author: Trelent
+    """
     contact = await repository_contacts.search_by_fields_and(name, last_name, email, phone, current_user, db=db)
     # contact = await repository_contacts.search_by_fields_and(body, current_user, db=db)
     if contact is None:
@@ -170,14 +259,26 @@ async def search_by_fields_and(
             '/search_by_fields_or/{query_str}', 
             description=f'No more than {settings.limit_warn} requests per minute',
             dependencies=[Depends(RateLimiter(times=settings.limit_warn, seconds=60))],
-            response_model=Page[ContactResponse], tags=['search']
+            response_model=Page, tags=['search']
             )
 async def search_by_fields_or(
                               query_str: str,
                               db: Session = Depends(get_db),
-                              current_user: User = Depends(auth_service.get_current_user)
-                              ) -> Page[ContactResponse]:
-    contact = await repository_contacts.search_by_fields_or(query_str, current_user, db)
+                              current_user: User = Depends(auth_service.get_current_user),
+                              pagination_params: Params = Depends()
+                              ) -> Page:
+    """
+    The search_by_fields_or function searches for contacts by a query string.
+    The search is performed on the first_name, last_name, and email fields of the contact table.
+    If no matches are found, an HTTP 404 Not Found error is raised.
+
+    :param query_str: str: Search for a contact by name, email or phone number
+    :param db: Session: Create a connection to the database
+    :param current_user: User: Get the current user
+    :param pagination_params: Params: Parameters for pagination, page(int), size(int) in Params object
+    :return: A list of contacts
+    """
+    contact = await repository_contacts.search_by_fields_or(query_str, current_user, db, pagination_params)
     if contact is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='Contact Not Found')
     
@@ -188,14 +289,26 @@ async def search_by_fields_or(
             '/search_by_like_fields_or/{query_str}', 
             description=f'No more than {settings.limit_warn} requests per minute',
             dependencies=[Depends(RateLimiter(times=settings.limit_warn, seconds=60))],
-            response_model=Page[ContactResponse], tags=['search']
+            response_model=Page, tags=['search']
             )
 async def search_by_like_fields_or(
                                    query_str: str,
                                    db: Session = Depends(get_db),
-                                   current_user: User = Depends(auth_service.get_current_user)
-                                   ) -> Page[ContactResponse]:
-    contact = await repository_contacts.search_by_like_fields_or(query_str, current_user, db)
+                                   current_user: User = Depends(auth_service.get_current_user),
+                                   pagination_params: Params = Depends()
+                                   ) -> Page:
+    """
+    The search_by_like_fields_or function searches for contacts by a query string.
+    The search is performed on the first_name, last_name, and email fields of the contact table.
+    The search is case insensitive and will return all contacts that match any of the three fields.
+
+    :param query_str: str: Search for a contact by first name, last name, or email
+    :param db: Session: Access the database
+    :param current_user: User: Get the user's id
+    :param pagination_params: Params: Parameters for pagination, page(int), size(int) in Params object
+    :return: A page object
+    """
+    contact = await repository_contacts.search_by_like_fields_or(query_str, current_user, db, pagination_params)
     if contact is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='Contact Not Found')
     
@@ -206,7 +319,7 @@ async def search_by_like_fields_or(
             '/search_by_like_fields_and/', 
             description=f'No more than {settings.limit_warn} requests per minute',
             dependencies=[Depends(RateLimiter(times=settings.limit_warn, seconds=60))],
-            response_model=Page[ContactResponse], tags=['search']
+            response_model=Page, tags=['search']
             )
 async def search_by_like_fields_and(
                                     name: str | None = None,
@@ -214,9 +327,31 @@ async def search_by_like_fields_and(
                                     email: str | None = None,
                                     phone: int | None = None,
                                     db: Session = Depends(get_db),
-                                    current_user: User = Depends(auth_service.get_current_user)
-                                    ) -> Page[ContactResponse]:
-    contact = await repository_contacts.search_by_like_fields_and(name, last_name, email, phone, current_user, db=db)
+                                    current_user: User = Depends(auth_service.get_current_user),
+                                    pagination_params: Params = Depends()
+                                    ) -> Page:
+    """
+    The search_by_like_fields_and function searches for a contact by name, last_name, email or phone.
+        The search is case insensitive and will return all contacts that match the query.
+
+    :param name: str | None: Search for a contact by name
+    :param last_name: str | None: Search by last_name,
+    :param email: str | None: Search by email
+    :param phone: int | None: Filter the contacts by phone
+    :param db: Session: Get the database session from the dependency injection
+    :param current_user: User: Get the current user from the database
+    :param pagination_params: Params: Parameters for pagination, page(int), size(int) in Params object
+    :return: A list of contacts
+    """
+    contact = await repository_contacts.search_by_like_fields_and(
+                                                                  name, 
+                                                                  last_name, 
+                                                                  email, 
+                                                                  phone, 
+                                                                  current_user, 
+                                                                  db, 
+                                                                  pagination_params
+                                                                  )
     if contact is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='Contact Not Found')
     

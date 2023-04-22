@@ -4,6 +4,7 @@ from pydantic import BaseModel, Field, EmailStr  # poetry add pydantic[email]
 
 
 class ContactModel(BaseModel):
+    """Contact model class."""
     name: str = Field(default='Unknown', min_length=2, max_length=30)
     last_name: str = Field(default='Unknown', min_length=2, max_length=40)
     email: EmailStr  # str =  Field(default='Unknown@mail.com', min_length=6, max_length=30, regex=...)  # i@i.ua
@@ -13,25 +14,28 @@ class ContactModel(BaseModel):
 
 
 class ContactResponse(ContactModel):
+    """Class for contact response."""
     id: int = 1 
 
     class Config:
+        """Indicates that the ContactResponse model is used to represent the ORM model."""
         orm_mode = True
 
 
 class CatToNameModel(BaseModel):
+    """Class Category to Name model."""
     name: str = Field(default='Unknown-next', min_length=2, max_length=30)
 
 
 class UserModel(BaseModel):
-    """корисні дані запиту для створення нового користувача."""
+    """User model class."""
     username: str = Field(min_length=2, max_length=30)
     email: EmailStr  # str
     password: str = Field(min_length=6, max_length=10)
 
 
 class UserDb(BaseModel):
-    """визначає представлення бази даних користувача."""
+    """Class User for DataBase."""
     id: int
     username: str
     email: str
@@ -39,26 +43,28 @@ class UserDb(BaseModel):
     avatar: str
 
     class Config:
-        """вказує, що модель UserDb використовується для представлення моделі ORM."""
+        """Indicates that the UserDb model is used to represent the ORM model."""
         orm_mode = True
 
 
 class UserResponse(BaseModel):
-    """модель відповіді, яка містить у собі модель UserDb та поле відомостей detail з рядком."""
+    """User response class."""
     user: UserDb
-    detail: str = 'User successfully created'
+    detail: str = 'User successfully created'  # messages ?
 
 
 class TokenModel(BaseModel):
-    """визначає відповідь при отриманні токенів доступу для користувача, що пройшов аутентифікацію."""
+    """Defines the response when receiving access tokens for an authenticated user."""
     access_token: str
     refresh_token: str
-    token_type: str = 'bearer'
+    token_type: str = 'bearer'  # messages ?
 
 
 class RequestEmail(BaseModel):
+    """Request Email class."""
     email: EmailStr
 
 
 class PasswordRecovery(BaseModel):
+    """To check the sufficiency of the password during the password recovery procedure."""
     password: str = Field(min_length=6, max_length=10)

@@ -24,15 +24,17 @@ conf = ConnectionConfig(
 
 
 async def send_email(email: EmailStr, username: str, host: str):
-    """Приймає три аргументи – адресу електронної пошти одержувача, ім’я користувача 
-    і хост, де працює наш застосунок. Насамперед створюємо токен JWT для верифікації 
-    електронної пошти за допомогою методу auth_service.create_email_token. Потім 
-    цей токен передається в шаблон електронної пошти як змінна за допомогою 
-    параметра template_body.
-    (створюємо об’єкт MessageSchema із зазначеними темою, одержувачами та тілом шаблону, 
-    а потім передаємо його об’єкту FastMail. Наприкінці викликаємо метод send_message, 
-    що передає повідомлення та ім’я шаблону email_template.html. 
-    Сам шаблон знаходиться в папці templates)
+    """
+    The send_email function sends an email to the user's email address.
+        Args:
+            email (str): The user's email address.
+            username (str): The username of the user who is registering for a new account.
+
+    :param email: EmailStr: Validate the email address
+    :param username: str: Pass the username of the user who is registering
+    :param host: str: Pass the host name of the server to be used in the email template
+    :return: A coroutine, which is an object that can be awaited
+    :doc-author: Trelent
     """
     subject = 'Confirm your email '
     try:
@@ -57,16 +59,21 @@ async def send_email(email: EmailStr, username: str, host: str):
 
 
 async def send_reset_password(email: EmailStr, username: str, host: str):
-    """Приймає три аргументи – адресу електронної пошти одержувача, ім’я користувача 
-    і хост, де працює наш застосунок. Насамперед створюємо токен JWT для верифікації 
-    запиту скидання пароля за допомогою методу auth_service.create_password_reset_token. Потім 
-    цей токен передається в шаблон електронної пошти як змінна за допомогою 
-    параметра template_body.
-    (створюємо об’єкт MessageSchema із зазначеними темою, одержувачами та тілом шаблону, 
-    а потім передаємо його об’єкту FastMail. Наприкінці викликаємо метод 
-    send_message, 
-    що передає повідомлення та ім’я шаблону password_reset.html. 
-    Сам шаблон знаходиться в папці templates)
+    """
+    The send_reset_password function sends a password reset email to the user.
+        Args:
+            email (str): The user's email address.
+            username (str): The user's username.  This is used in the template for personalization purposes only, and
+            is not required by this function or any other part of the application.
+            host (str): The hostname of your website, e.g., 'http://localhost:8000'.  This is used in the template
+            for personalization purposes only, and is not required by this function or any other part
+            of the application.
+
+    :param email: EmailStr: Get the email address of the user
+    :param username: str: Get the username of the user who is requesting a password reset
+    :param host: str: Create the link to reset the password
+    :return: A token
+    :doc-author: Trelent
     """
     subject = 'Reset password '
     try:

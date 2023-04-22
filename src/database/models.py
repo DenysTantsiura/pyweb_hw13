@@ -7,6 +7,7 @@ from src.database.db_connect import Base
 
 
 class Contact(Base):
+    """Base Contact class."""
     __tablename__: str = 'contacts'
     id = Column(Integer, primary_key=True)
     name = Column(String(30), index=True)
@@ -16,12 +17,14 @@ class Contact(Base):
     birthday = Column(Date, index=True, nullable=True)
     description = Column(String(3000))
     user_id = Column('user_id', ForeignKey('users.id', ondelete='CASCADE'), default=None)
-    user = relationship('User', backref='users')  # створює зв'язок між класами і вказує, що зв'язок є зв'язком m2m
-    # backref створює зворотне посилання на клас User,
-    # дозволяючи отримати доступ до зв'язаних об'єктів Contact з об'єкта User
+    user = relationship('User', backref='users')
+    # creates a connection between classes and indicates that the connection is an m2m connection
+    # backref creates a back reference to the User class, allowing the associated Contact objects
+    # to be accessed from the User object
 
 
 class User(Base):
+    """Base User class."""
     __tablename__ = 'users'
     id = Column(Integer, primary_key=True)
     username = Column(String(50))
@@ -30,4 +33,4 @@ class User(Base):
     created_at = Column('crated_at', DateTime, default=func.now())
     avatar = Column(String(255), nullable=True)
     refresh_token = Column(String(255), nullable=True)
-    confirmed = Column(Boolean, default=False)  # чи був підтверджений email користувача
+    confirmed = Column(Boolean, default=False)  # whether the user's email was confirmed
