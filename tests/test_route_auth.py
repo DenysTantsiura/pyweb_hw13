@@ -22,6 +22,7 @@ def test_signup_ok(client, user, monkeypatch):
     assert data['user']['email'] == user.get('email')
     assert 'id' in data['user']
 
+    # return client, user
 
 def test_signup_fail(client, user):  # , mocker
     # mocker.patch('src.routes.auth.send_email')  # !- background_tasks not execute
@@ -41,6 +42,7 @@ def test_login_ok(client, session, user):
     assert response.status_code == status.HTTP_200_OK
     assert data['token_type'] == 'bearer'  # m.TOKEN_TYPE
     
+    # return data['access_token']
 
 def test_login_fail(client, session, user):  # split into several?
     current_user: User = session.query(User).filter(User.email == user.get('email')).first()

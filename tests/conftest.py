@@ -6,27 +6,20 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 from main import app
-from src.database.models import Base
+from src.database.models import Base, User
 from src.database.db_connect import get_db
 
-'''
-engine = create_engine('sqlite:///:memory:')
-    Base.metadata.create_all(engine)
-    Base.metadata.bind = engine
-    Session = sessionmaker(bind=engine)
-    session = Session()
 
-'''
 # memory is not usedmemory is not used!!! Unfortunately. # 'sqlite:///:memory:' :
 SQLALCHEMY_DATABASE_URL = 'sqlite:///./test.db'
 
 engine = create_engine(
-    SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False}
+    SQLALCHEMY_DATABASE_URL, connect_args={'check_same_thread': False}
 )
 TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture(scope='module')
 def session():
     # Create the database
 
@@ -40,7 +33,7 @@ def session():
         db.close()
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture(scope='module')
 def client(session):
     # Dependency override
 
@@ -55,7 +48,7 @@ def client(session):
     yield TestClient(app)
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture(scope='module')
 def user():
     return {
             'username': 'Example_Name',
@@ -66,3 +59,5 @@ def user():
             'refresh_token': 'token1',
             'confirmed': 'false',
             }
+
+

@@ -50,14 +50,14 @@ class UserDb(BaseModel):
 class UserResponse(BaseModel):
     """User response class."""
     user: UserDb
-    detail: str = 'User successfully created'
+    detail: str = 'User successfully created'  # messages ?
 
 
 class TokenModel(BaseModel):
     """Defines the response when receiving access tokens for an authenticated user."""
     access_token: str
     refresh_token: str
-    token_type: str = 'bearer'
+    token_type: str = 'bearer'  # messages ?
 
 
 class RequestEmail(BaseModel):
