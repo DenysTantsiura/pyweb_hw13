@@ -5,6 +5,7 @@ from fastapi.templating import Jinja2Templates
 from starlette.templating import _TemplateResponse
 from sqlalchemy.orm import Session
 
+from src.conf import messages as m
 from src.database.db_connect import get_db
 from src.repository import users as repository_users
 from src.schemes import (
@@ -43,7 +44,7 @@ async def signup(
     """
     exist_user = await repository_users.get_user_by_email(body.email, db)
     if exist_user:
-        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail='Account already exists!')
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=m.ACCOUNT_EXIST)
     
     body.password = auth_service.get_password_hash(body.password)
     new_user = await repository_users.create_user(body, db)
@@ -68,13 +69,13 @@ async def login(
     """
     user = await repository_users.get_user_by_email(body.username, db)
     if user is None:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='Invalid email')
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=m.INCORRECT_MAIL)
     
     if not user.confirmed:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='Email not confirmed')
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=m.UNCOMFIRMED_EMAIL)
     
     if not auth_service.verify_password(body.password, user.password):
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='Invalid password')
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=m.INCORRECT_PASSWORD)
     
     # Generate JWT
     access_token = await auth_service.create_access_token(data={'sub': user.email})
@@ -104,7 +105,7 @@ async def refresh_token(
     user = await repository_users.get_user_by_email(email, db)
     if user.refresh_token != token:
         await repository_users.update_token(user, None, db)
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='Invalid refresh token')
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=m.INCORRECT_REFRESH_TOKEN)
 
     access_token = await auth_service.create_access_token(data={'sub': email})
     refresh_token = await auth_service.create_refresh_token(data={'sub': email})
@@ -131,14 +132,14 @@ async def confirmed_email(
     email = await auth_service.get_email_from_token(token)
     user = await repository_users.get_user_by_email(email, db)
     if user is None:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='Verification error')
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=m.ERROR_VERIFICATION)
      
     if user.confirmed:
-        return {'message': 'Your email is already confirmed'}
+        return {'message': m.CONFIRMED_EMAIL_ALREADY}
     
     await repository_users.confirmed_email(email, db)
 
-    return {'message': 'Email confirmed'}
+    return {'message': m.CONFIRMED_EMAIL}
 
 
 @router.post('/request_email')
@@ -162,11 +163,11 @@ async def request_email(
 
     if user:
         if user.confirmed:
-            return {'message': 'Your email is already confirmed'}
+            return {'message': m.CONFIRMED_EMAIL_ALREADY}
 
         background_tasks.add_task(send_email, user.email, user.username, request.base_url)
 
-    return {'message': 'Check your email for confirmation.'}
+    return {'message': m.WARNING_EMAIL}
 
 
 @router.post('/reset-password')
@@ -194,11 +195,11 @@ async def reset_password(
         if user.confirmed:
             background_tasks.add_task(send_reset_password, user.email, user.username, request.base_url)
 
-            return {'message': 'Check your email for confirmation.'}
+            return {'message': m.WARNING_EMAIL}
         
-        return {'message': 'Your email address has not been verified yet.'}
+        return {'message': m.WARNING_VERIFIED_EMAIL}
     
-    return {'message': 'Check if the email is entered correctly.'}
+    return {'message': m.WARNING_ATTENTION_EMAIL}
 
 
 # users/password_reset_done.html
@@ -214,7 +215,7 @@ async def reset_password_done(request: Request) -> _TemplateResponse:
     :doc-author: Trelent
     """
     return templates.TemplateResponse('password_reset_done.html', {'request': request,
-                                                                   'title': 'Password-change email has been sent'})
+                                                                   'title': m.MSG_SENT_PASSWORD})
 
 
 @router.post('/reset-password/confirm/{token}')
@@ -249,19 +250,19 @@ async def reset_password_confirm(
     exist_user = await repository_users.get_user_by_email(email, db)
     if not exist_user:
         raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-                            detail='Can`t find user by email from token.')
+                            detail=m.WARNING_INVALID_TOKEN)
     
     body.password = auth_service.get_password_hash(body.password)
     
     updated_user = await repository_users.change_password_for_user(exist_user, body.password, db)
     if updated_user is None:
         raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-                            detail='Can`t find user by email from token.')
+                            detail=m.WARNING_INVALID_TOKEN)
 
     # request.base_url ->  http://127.0.0.1:8000/
     background_tasks.add_task(send_email, updated_user.email, updated_user.username, request.base_url)  
 
-    return {'user': updated_user, 'detail': 'User`s password successfully changed.'}
+    return {'user': updated_user, 'detail': m.MSG_PASSWORD_CHENGED}
 
 
 # users/password_reset_complete.html
@@ -276,4 +277,4 @@ async def reset_password_complete(request: Request) -> _TemplateResponse:
     :doc-author: Trelent
     """
     return templates.TemplateResponse('password_reset_complete.html', {'request': request,
-                                                                       'title': 'Complete password reset'})
+                                                                       'title': m.MSG_PASSWORD_RESET})
