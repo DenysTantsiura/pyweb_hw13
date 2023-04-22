@@ -12,10 +12,9 @@ from sqlalchemy import text
 import uvicorn
 from starlette.templating import _TemplateResponse
 
+from src.conf.config import settings
 from src.database.db_connect import get_db
 from src.routes import auth, contacts, users
-
-from src.conf.config import settings
 
 
 # export PYTHONPATH="${PYTHONPATH}:/1prj/pyweb_hw13/"

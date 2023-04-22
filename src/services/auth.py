@@ -123,7 +123,7 @@ class Auth:
             
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='Invalid scope for token')
         
-        except JWTError:
+        except JWTError as e:
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='Could not validate credentials')
 
     # @cache
