@@ -1,8 +1,8 @@
 
 import asyncio
 
-from fastapi.templating import Jinja2Templates 
-from fastapi.testclient import TestClient
+# from fastapi.templating import Jinja2Templates 
+# from fastapi.testclient import TestClient
 from unittest.mock import MagicMock
 from fastapi import status
 
@@ -86,12 +86,12 @@ def test_refresh_token_fail(client, user):
 
     assert response.status_code == status.HTTP_401_UNAUTHORIZED
     assert response.json()['detail'] == 'Could not validate credentials'  # why not 'Invalid refresh token'?  need mock?
-    # or check invalid token?
+    # or check untrue(invalid) token?
 
-    invalid_refresh_token = asyncio.run(
-        auth_service.create_refresh_token(data={'sub': user['email']}, expires_delta=10)
-    )
-    headers = {'Authorization': f'Bearer {invalid_refresh_token}'}
+    untrue_refresh_token = asyncio.run(
+                                        auth_service.create_refresh_token(data={'sub': user['email']}, expires_delta=10)
+                                        )
+    headers = {'Authorization': f'Bearer {untrue_refresh_token}'}
     response = client.get('api/auth/refresh_token', headers=headers)
 
     assert response.status_code == status.HTTP_401_UNAUTHORIZED
@@ -109,123 +109,125 @@ def test_confirmed_email_ok(client, session, user):
     assert response.status_code == status.HTTP_200_OK
     assert response.json()['message'] == 'Email confirmed'
 
-    '''
-    def test_confirmed_email_was_successfully(self, client, session, user,
-                                              detail, is_confirmed):
-        if is_confirmed:
-            db_user = session.scalar(select(User).filter(User.email == user['email']))
-            db_user.confirmed = False
-            session.commit()
 
-        email_token = asyncio.run(
-            auth_service.create_email_token(data={'sub': user['email']})
-        )
-        response = client.get(self.url_path.format(token=email_token))
+def test_confirmed_email_fail(client, session, user):  # split into several?
+    current_user: User = session.query(User).filter(User.email == user.get('email')).first()
+    current_user.confirmed = True
+    session.commit()
 
-        assert response.status_code == status.HTTP_200_OK
-        assert response.json()['message'] == detail
-    '''
+    email_token = auth_service.create_email_token(data={'sub': user['email'], 'email': user['email'], 'username': user['username']})
+    response = client.get(f'api/auth/confirmed_email/{email_token}')
 
-def test_confirmed_email_fail(client, session, user):
-    pass
+    assert response.status_code == status.HTTP_200_OK
+    assert response.json()['message'] == 'Your email is already confirmed'
 
-def test_confirmed_email_done(client, user, monkeypatch):
-    pass
+    email_token = auth_service.create_email_token(data={'sub': 'UNKNOWN!@com.com', 'email': '-', 'username': '-'})
+    response = client.get(f'api/auth/confirmed_email/{email_token}')
 
-def test_request_email_ok(client, user, monkeypatch):
-    pass
-
-def test_request_email_check(client, user, monkeypatch):
-    pass
-
-def test_reset_password_ok(client, user, monkeypatch):
-    pass
-
-def test_reset_password_check(client, user, monkeypatch):
-    pass
-
-def test_reset_password_not_ready(client, user, monkeypatch):
-    pass
+    assert response.status_code == status.HTTP_400_BAD_REQUEST
+    assert response.json()['detail'] == 'Verification error'
 
 
-def test_reset_password_done(client, user, monkeypatch):
-    pass
+def test_request_email_ok(client, session, user):
+    current_user: User = session.query(User).filter(User.email == user.get('email')).first()
+    current_user.confirmed = True
+    session.commit()
+
+    response = client.post('api/auth/request_email', json={'email': user.get('email')})
+
+    assert response.status_code == status.HTTP_200_OK
+    assert response.json()['message'] == 'Your email is already confirmed'
 
 
-def test_reset_password_confirm_ok(client, user, monkeypatch):
-    pass
+def test_request_email_check(client, session, user):  # , monkeypatch is redundant
+    # mock_send_email = MagicMock() # redundant
+    current_user: User = session.query(User).filter(User.email == user.get('email')).first()
+    current_user.confirmed = False
+    session.commit()
 
-def test_reset_password_confirm_fail(client, user, monkeypatch):
-    pass
+    # monkeypatch.setattr('src.routes.auth.send_email', mock_send_email)  # redundant
+    
+    response = client.post('api/auth/request_email', json={'email': user.get('email')})
+
+    assert response.status_code == status.HTTP_200_OK
+    assert response.json()['message'] == 'Check your email for confirmation.'
+
+    response2 = client.post('api/auth/request_email', json={'email': 'Email@notSignUp.user'})
+
+    assert response2.status_code == status.HTTP_200_OK
+    assert response2.json()['message'] == 'Check your email for confirmation.'
+
+
+def test_reset_password_ok(client, session, user):
+    current_user: User = session.query(User).filter(User.email == user.get('email')).first()
+    current_user.confirmed = True
+    session.commit()
+
+    response = client.post('api/auth/reset-password', json={'email': user.get('email')})
+
+    assert response.status_code == status.HTTP_200_OK
+    assert response.json()['message'] == 'Check your email for confirmation.'
+
+
+def test_reset_password_check(client, session, user):  # split into several?
+    current_user: User = session.query(User).filter(User.email == user.get('email')).first()
+    current_user.confirmed = False
+    session.commit()
+
+    response = client.post('api/auth/reset-password', json={'email': user.get('email')})
+
+    assert response.status_code == status.HTTP_200_OK
+    assert response.json()['message'] == 'Your email address has not been verified yet.'
+
+    response2 = client.post('api/auth/reset-password', json={'email': 'Non_exist@email.com'})
+
+    assert response2.status_code == status.HTTP_200_OK
+    assert response2.json()['message'] == 'Check if the email is entered correctly.'
+
+
+def test_reset_password_done(client):
+    response = client.get('api/auth/reset-password/done')
+
+    assert response.status_code == status.HTTP_200_OK
+    assert response.template.name == 'password_reset_done.html'
+    assert 'request' in response.context
+    assert 'title' in response.context
+    assert response.context['title'] == 'Password-change email has been sent'
+
+
+def test_reset_password_confirm_ok(client, session, user, monkeypatch):
+    mock_send_email = MagicMock()
+    monkeypatch.setattr('src.routes.auth.send_email', mock_send_email) 
+
+    current_user: User = session.query(User).filter(User.email == user.get('email')).first()
+    current_user.confirmed = True
+    session.commit()
+
+    user.update(password='new_secret')
+
+    token = auth_service.create_email_token(data={'sub': user['email']})
+
+    response = client.post(f'api/auth/reset-password/confirm/{token}', json={'password': user['password']})  # data=  json= , headers=headers
+ 
+    assert response.status_code == status.HTTP_200_OK
+    assert 'user' in response.json()  # response.content  # context
+    assert response.json()['detail'] == 'User`s password successfully changed.'
+
+
+def test_reset_password_confirm_fail(client, session, user, monkeypatch):
+    mock_send_email = MagicMock()
+    monkeypatch.setattr('src.routes.auth.send_email', mock_send_email) 
+
+    current_user: User = session.query(User).filter(User.email == user.get('email')).first()
+    current_user.confirmed = True
+    session.commit()
+
+    token = auth_service.create_email_token(data={'sub': 'Non_exist@user.mail'})
+    response = client.post(f'api/auth/reset-password/confirm/{token}', json={'password': 'new_secret'})  # data=   json=
+
+    assert response.status_code == status.HTTP_503_SERVICE_UNAVAILABLE
+    assert response.json()['detail'] == 'Can`t find user by email from token.'
 
 
 def test_reset_password_complete_ok(client, user, monkeypatch):
     pass
-
-
-'''
-def test_create_user(client, user, monkeypatch):
-    mock_send_email = MagicMock()
-    monkeypatch.setattr('src.routes.auth.send_email', mock_send_email)
-    response = client.post(
-        '/api/auth/signup',
-        json=user,
-    )
-    assert response.status_code == 201, response.text
-    data = response.json()
-    assert data['user']['email'] == user.get('email')
-    assert 'id' in data['user']
-
-
-def test_repeat_create_user(client, user):
-    response = client.post(
-        "/api/auth/signup",
-        json=user,
-    )
-    assert response.status_code == 409, response.text
-    data = response.json()
-    assert data["detail"] == "Account already exists"
-
-
-def test_login_user_not_confirmed(client, user):
-    response = client.post(
-        "/api/auth/login",
-        data={"username": user.get('email'), "password": user.get('password')},
-    )
-    assert response.status_code == 401, response.text
-    data = response.json()
-    assert data["detail"] == "Email not confirmed"
-
-
-def test_login_user(client, session, user):
-    current_user: User = session.query(User).filter(User.email == user.get('email')).first()
-    current_user.confirmed = True
-    session.commit()
-    response = client.post(
-        "/api/auth/login",
-        data={"username": user.get('email'), "password": user.get('password')},
-    )
-    assert response.status_code == 200, response.text
-    data = response.json()
-    assert data["token_type"] == "bearer"
-
-
-def test_login_wrong_password(client, user):
-    response = client.post(
-        "/api/auth/login",
-        data={"username": user.get('email'), "password": 'password'},
-    )
-    assert response.status_code == 401, response.text
-    data = response.json()
-    assert data["detail"] == "Invalid password"
-
-
-def test_login_wrong_email(client, user):
-    response = client.post(
-        "/api/auth/login",
-        data={"username": 'email', "password": user.get('password')},
-    )
-    assert response.status_code == 401, response.text
-    data = response.json()
-    assert data["detail"] == "Invalid email"
-    '''

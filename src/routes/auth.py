@@ -160,10 +160,10 @@ async def request_email(
     """
     user = await repository_users.get_user_by_email(body.email, db)
 
-    if user.confirmed:
-        return {'message': 'Your email is already confirmed'}
-    
     if user:
+        if user.confirmed:
+            return {'message': 'Your email is already confirmed'}
+
         background_tasks.add_task(send_email, user.email, user.username, request.base_url)
 
     return {'message': 'Check your email for confirmation.'}
@@ -189,13 +189,13 @@ async def reset_password(
     :doc-author: Trelent
     """
     user = await repository_users.get_user_by_email(body.email, db)
-
-    if user and user.confirmed:
-        background_tasks.add_task(send_reset_password, user.email, user.username, request.base_url)
-
-        return {'message': 'Check your email for confirmation.'}
     
     if user:
+        if user.confirmed:
+            background_tasks.add_task(send_reset_password, user.email, user.username, request.base_url)
+
+            return {'message': 'Check your email for confirmation.'}
+        
         return {'message': 'Your email address has not been verified yet.'}
     
     return {'message': 'Check if the email is entered correctly.'}
