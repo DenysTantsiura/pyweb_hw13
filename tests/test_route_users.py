@@ -1,15 +1,8 @@
-import asyncio
-
 from fastapi import status
 import pytest
 from sqlalchemy import select
-from unittest.mock import MagicMock
 
-from src.conf import messages as m
 from src.database.models import User
-from src.routes import auth  # redundand
-from src.services.auth import auth_service
-# from tests import test_route_auth
 
 
 @pytest.fixture(scope='function')
@@ -33,7 +26,7 @@ def test_read_users_me(client, access_token):
     response = client.get('api/users/me/')
     assert response.status_code == status.HTTP_401_UNAUTHORIZED
 
-    headers={'Authorization': f'Bearer {access_token}'}
+    headers = {'Authorization': f'Bearer {access_token}'}
     response = client.get('api/users/me/', headers=headers)
     assert response.status_code == status.HTTP_200_OK
     assert 'id' in response.json()
@@ -46,12 +39,12 @@ def test_read_users_me(client, access_token):
 def test_update_avatar_user(client, user, access_token, mocker):
     mock_avatar = 'https://pypi.org/static/images/logo-small.2a411bc6.svg'
     mocker.patch('src.routes.users.avatar_upload', return_value=mock_avatar)
-    files={'file': 'avatar_1.svg'}
+    files = {'file': 'avatar_1.svg'}
 
     response = client.patch('api/users/avatar', files=files)
     assert response.status_code == status.HTTP_401_UNAUTHORIZED
 
-    headers={'Authorization': f'Bearer {access_token}'}
+    headers = {'Authorization': f'Bearer {access_token}'}
     response = client.patch('api/users/avatar', headers=headers, files=files)
     assert response.status_code == status.HTTP_200_OK
     assert 'id' in response.json()

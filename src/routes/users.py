@@ -3,7 +3,7 @@
 from fastapi import APIRouter, Depends, UploadFile, File  # status
 from sqlalchemy.orm import Session
 
-from src.conf.config import settings
+# from src.conf.config import settings
 from src.database.db_connect import get_db
 from src.database.models import User
 from src.repository import users as repository_users
